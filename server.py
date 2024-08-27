@@ -32,7 +32,14 @@ from typing import Optional
 from api_server.routes.internal.internal_routes import InternalRoutes
 
 import base64
+import boto3
 
+from botocore.exceptions import NoCredentialsError, ClientError
+
+AWS_ACCESS_KEY_ID = ''
+AWS_SECRET_ACCESS_KEY = ''
+AWS_BUCKET_NAME = ''
+AWS_REGION = ''
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -674,15 +681,9 @@ class PromptServer():
                                         if 'images' in output and output['images']:
                                             image_info = output['images'][0]
 
-                                            # Debugging: Log image_info to see what it contains
                                             logging.info(f"Image info: {image_info}")
 
                                             image_filename = image_info.get('filename')
-                                            image_type = image_info.get('type')
-                                            subfolder = image_info.get('subfolder', "")
-
-                                            # Debugging: Log values before constructing the path
-                                            logging.info(f"Filename: {image_filename}, Type: {image_type}, Subfolder: {subfolder}")
                                             break
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
@@ -697,13 +698,31 @@ class PromptServer():
                             path = os.path.join(output_dir, image_filename)
 
                             try:
-                                # Load the image and convert it to base64
-                                with open(path, "rb") as image_file:
-                                    image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-                                logging.info("Image successfully converted to base64")
-                                return web.json_response({"image_base64": image_base64})
+                                # Upload the image to AWS S3
+                                s3_client = boto3.client(
+                                    's3',
+                                    aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                                    region_name=AWS_REGION,
+                                )
+                                new_filename = str(uuid.uuid4()) + '.jpg'
+                                s3_key = f"devEnv/{new_filename}" 
+
+                                s3_client.upload_file(path, AWS_BUCKET_NAME, s3_key,ExtraArgs={'ACL': 'public-read'})
+
+                                # Get the S3 URL
+                                s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{s3_key}"
+
+                                logging.info("Image successfully uploaded to S3")
+                                return web.json_response({"image_url": s3_url})
+                            except NoCredentialsError:
+                                logging.error("AWS credentials not available")
+                                return web.json_response({"error": "AWS credentials not available"}, status=500)
+                            except ClientError as e:
+                                logging.error(f"Failed to upload image to S3: {str(e)}")
+                                return web.json_response({"error": "Failed to upload image to S3"}, status=500)
                             except Exception as e:
-                                logging.error(f"Failed to open or convert image: {str(e)}")
+                                logging.error(f"Failed to process image: {str(e)}")
                                 return web.json_response({"error": "Failed to process the image"}, status=500)
                         else:
                             return web.json_response({"error": "Failed to generate image"}, status=500)
@@ -712,6 +731,7 @@ class PromptServer():
                 logging.error(f"Error in generate_image for prompt_id {prompt_id}: {str(e)}")
                 logging.error(traceback.format_exc())
                 return web.json_response({"error": "Internal server error"}, status=500)
+
 
     async def setup(self):
         timeout = aiohttp.ClientTimeout(total=None) # no timeout
