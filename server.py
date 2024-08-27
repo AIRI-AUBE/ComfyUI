@@ -611,76 +611,76 @@ class PromptServer():
 
         @routes.post("/generate_image")
         async def generate_image(request):
-        try:
-            # Parse JSON request body
-            json_data = await request.json()
-            prompt = json_data.get("prompt")
-            if not prompt:
-                return web.json_response({"error": "prompt is required"}, status=400)
+            try:
+                # Parse JSON request body
+                json_data = await request.json()
+                prompt = json_data.get("prompt")
+                if not prompt:
+                    return web.json_response({"error": "prompt is required"}, status=400)
 
-            # Process the prompt
-            valid = execution.validate_prompt(prompt)
-            if not valid[0]:
-                logging.warning(f"Invalid prompt: {valid[1]}")
-                return web.json_response({"error": valid[1]}, status=400)
+                # Process the prompt
+                valid = execution.validate_prompt(prompt)
+                if not valid[0]:
+                    logging.warning(f"Invalid prompt: {valid[1]}")
+                    return web.json_response({"error": valid[1]}, status=400)
 
-            # Generate a unique ID for this prompt
-            prompt_id = str(uuid.uuid4())
-            number = self.number
-            self.number += 1
+                # Generate a unique ID for this prompt
+                prompt_id = str(uuid.uuid4())
+                number = self.number
+                self.number += 1
 
-            # Prepare the extra data if available
-            extra_data = json_data.get("extra_data", {})
-            if "client_id" in json_data:
-                extra_data["client_id"] = json_data["client_id"]
+                # Prepare the extra data if available
+                extra_data = json_data.get("extra_data", {})
+                if "client_id" in json_data:
+                    extra_data["client_id"] = json_data["client_id"]
 
-            # Add prompt to the queue
-            outputs_to_execute = valid[2]
-            self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
+                # Add prompt to the queue
+                outputs_to_execute = valid[2]
+                self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
 
-            # Wait for the WebSocket to provide the image path
-            image_path = await self.wait_for_image_path(prompt_id)
-            if not image_path:
-                return web.json_response({"error": "Image generation failed"}, status=500)
+                # Wait for the WebSocket to provide the image path
+                image_path = await self.wait_for_image_path(prompt_id)
+                if not image_path:
+                    return web.json_response({"error": "Image generation failed"}, status=500)
 
-            # Read the image file and encode it in base64
-            with open(image_path, 'rb') as image_file:
-                image_data = image_file.read()
-                base64_image = base64.b64encode(image_data).decode('utf-8')
+                # Read the image file and encode it in base64
+                with open(image_path, 'rb') as image_file:
+                    image_data = image_file.read()
+                    base64_image = base64.b64encode(image_data).decode('utf-8')
 
-            # Return the base64 encoded image in the response
-            return web.json_response({"image": base64_image})
+                # Return the base64 encoded image in the response
+                return web.json_response({"image": base64_image})
 
-        except Exception as e:
-            logging.error(f"Error in generate_image: {str(e)}")
-            logging.error(traceback.format_exc())
-            return web.json_response({"error": "Internal server error"}, status=500)
+            except Exception as e:
+                logging.error(f"Error in generate_image: {str(e)}")
+                logging.error(traceback.format_exc())
+                return web.json_response({"error": "Internal server error"}, status=500)
 
-        async def wait_for_image_path(self, prompt_id, timeout=60):
-            """
-            Wait for the WebSocket to provide the image path for the given prompt_id.
-            The function will timeout if the image path is not received within the specified timeout.
-            """
-            start_time = asyncio.get_event_loop().time()
-            while True:
-                # Check if the prompt_id is in the WebSocket message queue
-                for sid, ws in self.sockets.items():
-                    async for msg in ws:
-                        if msg.type == aiohttp.WSMsgType.TEXT:
-                            data = json.loads(msg.data)
-                            if data['type'] == 'executed' and data['data']['prompt_id'] == prompt_id:
-                                output = data['data']['output']
-                                if 'images' in output and output['images']:
-                                    image_info = output['images'][0]
-                                    return folder_paths.get_full_path(image_info['type'], image_info['filename'])
+    async def wait_for_image_path(self, prompt_id, timeout=60):
+        """
+        Wait for the WebSocket to provide the image path for the given prompt_id.
+        The function will timeout if the image path is not received within the specified timeout.
+        """
+        start_time = asyncio.get_event_loop().time()
+        while True:
+            # Check if the prompt_id is in the WebSocket message queue
+            for sid, ws in self.sockets.items():
+                async for msg in ws:
+                    if msg.type == aiohttp.WSMsgType.TEXT:
+                        data = json.loads(msg.data)
+                        if data['type'] == 'executed' and data['data']['prompt_id'] == prompt_id:
+                            output = data['data']['output']
+                            if 'images' in output and output['images']:
+                                image_info = output['images'][0]
+                                return folder_paths.get_full_path(image_info['type'], image_info['filename'])
 
-                # Timeout condition
-                elapsed_time = asyncio.get_event_loop().time() - start_time
-                if elapsed_time > timeout:
-                    logging.warning(f"Timeout while waiting for image path for prompt_id {prompt_id}")
-                    return None
+            # Timeout condition
+            elapsed_time = asyncio.get_event_loop().time() - start_time
+            if elapsed_time > timeout:
+                logging.warning(f"Timeout while waiting for image path for prompt_id {prompt_id}")
+                return None
 
-                await asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
 
 
     async def setup(self):
