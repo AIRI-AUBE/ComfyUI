@@ -612,6 +612,8 @@ class PromptServer():
         @routes.post("/generate_image")
         async def generate_image(request):
             try:
+                logging.info("Started processing request in generate_image")
+
                 # Parse JSON request body
                 json_data = await request.json()
                 prompt = json_data.get("prompt")
@@ -619,6 +621,7 @@ class PromptServer():
                     return web.json_response({"error": "prompt is required"}, status=400)
 
                 # Process the prompt
+                logging.info(f"Validating prompt: {prompt}")
                 valid = execution.validate_prompt(prompt)
                 if not valid[0]:
                     logging.warning(f"Invalid prompt: {valid[1]}")
@@ -626,6 +629,8 @@ class PromptServer():
 
                 # Generate a unique ID for this prompt
                 prompt_id = str(uuid.uuid4())
+                logging.info(f"Generated prompt_id: {prompt_id} for prompt: {prompt}")
+
                 number = self.number
                 self.number += 1
 
@@ -635,53 +640,78 @@ class PromptServer():
                     extra_data["client_id"] = json_data["client_id"]
 
                 # Add prompt to the queue
-                outputs_to_execute = valid[2]
-                self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
+                try:
+                    outputs_to_execute = valid[2]
+                    self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
+                except asyncio.QueueFull:
+                    logging.error(f"Queue is full, cannot process prompt_id {prompt_id}")
+                    return web.json_response({"error": "Server is busy, please try again later"}, status=503)
+                logging.info("Prompt successfully submitted to the queue")
 
-                # Wait for the WebSocket to provide the image path
-                image_path = await self.wait_for_image_path(prompt_id)
-                if not image_path:
-                    return web.json_response({"error": "Image generation failed"}, status=500)
+                # Establish a WebSocket connection manually
+                sid = extra_data.get("client_id", None)
+                if not sid:
+                    return web.json_response({"error": "client_id is required"}, status=400)
 
-                # Read the image file and encode it in base64
-                with open(image_path, 'rb') as image_file:
-                    image_data = image_file.read()
-                    base64_image = base64.b64encode(image_data).decode('utf-8')
+                websocket_url = f"ws://localhost:7860/ws?clientId={sid}"
+                logging.info(f"Connecting to WebSocket URL: {websocket_url}")
 
-                # Return the base64 encoded image in the response
-                return web.json_response({"image": base64_image})
+                async with aiohttp.ClientSession() as session:
+                    async with session.ws_connect(websocket_url) as ws:
+                        logging.info(f"Connected to WebSocket with client_id: {sid}")
+
+                        # Listen for WebSocket messages until the 'executed' message is received
+                        image_filename = None
+                        while True:
+                            try:
+                                msg = await ws.receive(timeout=60)  # 60 seconds timeout for receiving a message
+                                logging.info(f"Received WebSocket message: {msg}")
+
+                                if msg.type == aiohttp.WSMsgType.TEXT:
+                                    data = json.loads(msg.data)
+                                    if data.get('type') == 'executed' and data['data']['prompt_id'] == prompt_id:
+                                        output = data['data']['output']
+                                        if 'images' in output and output['images']:
+                                            image_info = output['images'][0]
+
+                                            # Debugging: Log image_info to see what it contains
+                                            logging.info(f"Image info: {image_info}")
+
+                                            image_filename = image_info.get('filename')
+                                            image_type = image_info.get('type')
+                                            subfolder = image_info.get('subfolder', "")
+
+                                            # Debugging: Log values before constructing the path
+                                            logging.info(f"Filename: {image_filename}, Type: {image_type}, Subfolder: {subfolder}")
+                                            break
+                                elif msg.type == aiohttp.WSMsgType.ERROR:
+                                    logging.warning(f"WebSocket error: {ws.exception()}")
+
+                            except asyncio.TimeoutError:
+                                logging.warning(f"Timeout while waiting for 'executed' message for prompt_id {prompt_id}")
+                                return web.json_response({"error": "Image generation timed out"}, status=500)
+
+                        if image_filename:
+                            # Construct the correct path to the image using absolute path
+                            output_dir = os.path.abspath(os.path.join(os.getcwd(), 'output'))
+                            path = os.path.join(output_dir, image_filename)
+
+                            try:
+                                # Load the image and convert it to base64
+                                with open(path, "rb") as image_file:
+                                    image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+                                logging.info("Image successfully converted to base64")
+                                return web.json_response({"image_base64": image_base64})
+                            except Exception as e:
+                                logging.error(f"Failed to open or convert image: {str(e)}")
+                                return web.json_response({"error": "Failed to process the image"}, status=500)
+                        else:
+                            return web.json_response({"error": "Failed to generate image"}, status=500)
 
             except Exception as e:
-                logging.error(f"Error in generate_image: {str(e)}")
+                logging.error(f"Error in generate_image for prompt_id {prompt_id}: {str(e)}")
                 logging.error(traceback.format_exc())
                 return web.json_response({"error": "Internal server error"}, status=500)
-
-    async def wait_for_image_path(self, prompt_id, timeout=60):
-        """
-        Wait for the WebSocket to provide the image path for the given prompt_id.
-        The function will timeout if the image path is not received within the specified timeout.
-        """
-        start_time = asyncio.get_event_loop().time()
-        while True:
-            # Check if the prompt_id is in the WebSocket message queue
-            for sid, ws in self.sockets.items():
-                async for msg in ws:
-                    if msg.type == aiohttp.WSMsgType.TEXT:
-                        data = json.loads(msg.data)
-                        if data['type'] == 'executed' and data['data']['prompt_id'] == prompt_id:
-                            output = data['data']['output']
-                            if 'images' in output and output['images']:
-                                image_info = output['images'][0]
-                                return folder_paths.get_full_path(image_info['type'], image_info['filename'])
-
-            # Timeout condition
-            elapsed_time = asyncio.get_event_loop().time() - start_time
-            if elapsed_time > timeout:
-                logging.warning(f"Timeout while waiting for image path for prompt_id {prompt_id}")
-                return None
-
-            await asyncio.sleep(0.5)
-
 
     async def setup(self):
         timeout = aiohttp.ClientTimeout(total=None) # no timeout
