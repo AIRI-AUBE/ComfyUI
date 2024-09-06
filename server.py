@@ -865,7 +865,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((600, 600))
+                                    image.thumbnail((200, 200))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
@@ -1087,7 +1087,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((600, 600))
+                                    image.thumbnail((200, 200))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
@@ -1153,13 +1153,13 @@ class PromptServer():
                 prompt = json_data.get("prompt")
                 if not prompt:
                     return web.json_response({"error": "prompt is required"}, status=400)
-                
+
                 # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
                 if not airi_path or airi_path in ["", "null", "undefined", None]:
                     # Replace the image name with "image.png" if airi_path is invalid
                     if '30' in prompt:
-                        prompt['30']['inputs']['image'] = "sketch.jpg"
+                        prompt['30']['inputs']['image'] = "image.png"
                     airi_path = None  # Explicitly set to None for clarity
                 else:
                     # Generate a GUID for the image filename only if airi_path is valid
@@ -1209,44 +1209,42 @@ class PromptServer():
                         return web.json_response({"error": "Failed to download base image from S3"}, status=500)
 
                     # Update the prompt to include the base image in section '35'
-                    if '100' in prompt:
-                        prompt['100']['inputs']['image'] = base_image_filename
+                    if '35' in prompt:
+                        prompt['35']['inputs']['image'] = base_image_filename
                     else:
                         # If '35' does not exist, create it and add the base image
-                        prompt['100'] = {
+                        prompt['35'] = {
                             "inputs": {
                                 "image": base_image_filename
                             }
                         }
 
-                # Extract and handle the base_image parameter (similar to airi_path)
+                # Extract and handle the mask_image parameter (similar to base_image)
                 mask_image = json_data.get("mask_image")
                 if mask_image and mask_image not in ["", "null", "undefined", None]:
-                    # Generate a GUID for the base image filename
                     mask_image_filename = str(uuid.uuid4()) + os.path.splitext(mask_image)[1]
                     mask_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_mask_image_path = os.path.join(mask_image_dir, mask_image_filename)
 
-                    # Download the base image from the S3 path and save it to the input directory
+                    # Download the mask image from the S3 path and save it to the input directory
                     try:
                         async with aiohttp.ClientSession() as session:
-                            async with session.get(base_image) as resp:
+                            async with session.get(mask_image) as resp:
                                 if resp.status == 200:
                                     with open(local_mask_image_path, 'wb') as f:
                                         f.write(await resp.read())
-                                    logging.info(f"Base image successfully downloaded and saved to {local_mask_image_path}")
+                                    logging.info(f"Mask image successfully downloaded and saved to {local_mask_image_path}")
                                 else:
-                                    logging.error(f"Failed to download base image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download base image"}, status=500)
+                                    logging.error(f"Failed to download mask image, status code: {resp.status}")
+                                    return web.json_response({"error": "Failed to download mask image"}, status=500)
                     except Exception as e:
-                        logging.error(f"Failed to download base image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download base image from S3"}, status=500)
+                        logging.error(f"Failed to download mask image from S3: {str(e)}")
+                        return web.json_response({"error": "Failed to download mask image from S3"}, status=500)
 
-                    # Update the prompt to include the base image in section '35'
+                    # Update the prompt to include the mask image in section '101'
                     if '101' in prompt:
                         prompt['101']['inputs']['image'] = mask_image_filename
                     else:
-                        # If '35' does not exist, create it and add the base image
                         prompt['101'] = {
                             "inputs": {
                                 "image": mask_image_filename
@@ -1320,11 +1318,36 @@ class PromptServer():
 
                         if image_filenames:
                             s3_urls = []
+                            thumbnail_urls = []
+                            image_metadata = []
                             output_dir = os.path.abspath(os.path.join(os.getcwd(), 'output'))
                             for image_filename in image_filenames:
                                 path = os.path.join(output_dir, image_filename)
 
+                                # Resize the obtained image to create a thumbnail using Pillow
                                 try:
+                                    # Open the original image
+                                    image = Image.open(path)
+
+                                    # Capture image metadata
+                                    width, height = image.size
+                                    size_in_bytes = os.path.getsize(path)
+                                    image_metadata.append({
+                                        "filename": image_filename,
+                                        "width": width,
+                                        "height": height,
+                                        "size_in_bytes": size_in_bytes
+                                    })
+
+                                    # Create a thumbnail
+                                    image.thumbnail((200, 200))
+
+                                    # Save the thumbnail
+                                    thumbnail_filename = "thumbnail_" + image_filename
+                                    thumbnail_path = os.path.join(output_dir, thumbnail_filename)
+                                    image.save(thumbnail_path)
+
+                                    # Upload both original and thumbnail to S3
                                     s3_client = boto3.client(
                                         's3',
                                         aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -1332,14 +1355,21 @@ class PromptServer():
                                         region_name=AWS_REGION,
                                     )
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
+                                    original_s3_key = f"devEnv/{new_filename}"
 
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, s3_key, ExtraArgs={'ACL': 'public-read'})
-
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{s3_key}"
+                                    # Upload the original image
+                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
                                     s3_urls.append(s3_url)
 
-                                    logging.info("Image successfully uploaded to S3")
+                                    # Upload the thumbnail image
+                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    thumbnail_urls.append(thumbnail_s3_url)
+
+                                    logging.info("Images and thumbnails successfully uploaded to S3")
+
                                 except NoCredentialsError:
                                     logging.error("AWS credentials not available")
                                     return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -1350,7 +1380,11 @@ class PromptServer():
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
 
-                            return web.json_response({"image_urls": s3_urls})
+                            return web.json_response({
+                                "image_urls": s3_urls,
+                                "image_thumbnail_urls": thumbnail_urls,
+                                "image_metadata": image_metadata
+                            })
                         else:
                             logging.error(f"No images found in the output for prompt_id {prompt_id}")
                             return web.json_response({"error": "Failed to generate image"}, status=500)
@@ -1359,6 +1393,7 @@ class PromptServer():
                 logging.error(f"Error in generate_image: {str(e)}")
                 logging.error(traceback.format_exc())
                 return web.json_response({"error": "Internal server error"}, status=500)
+
 
 
         @routes.post("/generate_image_04_enhance_upscale_basic_api")
