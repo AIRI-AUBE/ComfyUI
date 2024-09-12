@@ -37,10 +37,10 @@ import os
 
 from botocore.exceptions import NoCredentialsError, ClientError
 
-AWS_ACCESS_KEY_ID = ''
-AWS_SECRET_ACCESS_KEY = ''
-AWS_BUCKET_NAME = ''
-AWS_REGION = ''
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '7860')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '7860')
+AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME', '7860')
+AWS_REGION = os.getenv('AWS_REGION', '7860')
 
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
@@ -1093,6 +1093,229 @@ class PromptServer():
 
                                     # Create a thumbnail
                                     image.thumbnail((200, 200))
+
+                                    # Save the thumbnail
+                                    thumbnail_filename = "thumbnail_" + image_filename
+                                    thumbnail_path = os.path.join(output_dir, thumbnail_filename)
+                                    image.save(thumbnail_path)
+
+                                    # Upload both original and thumbnail to S3
+                                    s3_client = boto3.client(
+                                        's3',
+                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+                                        region_name=AWS_REGION,
+                                    )
+                                    new_filename = str(uuid.uuid4()) + '.jpg'
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
+                                    original_s3_key = f"devEnv/{new_filename}"
+
+                                    # Upload the original image
+                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
+                                    s3_urls.append(s3_url)
+
+                                    # Upload the thumbnail image
+                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    thumbnail_urls.append(thumbnail_s3_url)
+
+                                    logging.info("Images and thumbnails successfully uploaded to S3")
+
+                                except NoCredentialsError:
+                                    logging.error("AWS credentials not available")
+                                    return web.json_response({"error": "AWS credentials not available"}, status=500)
+                                except ClientError as e:
+                                    logging.error(f"Failed to upload image to S3: {str(e)}")
+                                    return web.json_response({"error": "Failed to upload image to S3"}, status=500)
+                                except Exception as e:
+                                    logging.error(f"Failed to process image: {str(e)}")
+                                    return web.json_response({"error": "Failed to process the image"}, status=500)
+
+                            return web.json_response({
+                                "image_urls": s3_urls, 
+                                "image_thumbnail_urls": thumbnail_urls, 
+                                "image_metadata": image_metadata
+                            })
+                        else:
+                            logging.error(f"No images found in the output for prompt_id {prompt_id}")
+                            return web.json_response({"error": "Failed to generate image"}, status=500)
+
+            except Exception as e:
+                logging.error(f"Error in generate_image: {str(e)}")
+                logging.error(traceback.format_exc())
+                return web.json_response({"error": "Internal server error"}, status=500)
+        
+
+        @routes.post("/generate_image_03_enhance_extend")
+        async def generate_image_03_enhance_extend(request):
+            try:
+                logging.info("Started processing request in generate_image")
+
+                # Parse JSON request body
+                json_data = await request.json()
+                prompt = json_data.get("prompt")
+                if not prompt:
+                    return web.json_response({"error": "prompt is required"}, status=400)
+
+                # Extract and validate the airi_path parameter
+                airi_path = json_data.get("airi_path")
+                if not airi_path or airi_path in ["", "null", "undefined", None]:
+                    # Replace the image name with "sketch.jpg" if airi_path is invalid
+                    if '30' in prompt:
+                        prompt['30']['inputs']['image'] = "image.png"
+                    airi_path = None  # Explicitly set to None for clarity
+                else:
+                    # Generate a GUID for the image filename only if airi_path is valid
+                    image_filename = str(uuid.uuid4()) + os.path.splitext(airi_path)[1]
+                    input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
+                    local_image_path = os.path.join(input_dir, image_filename)
+
+                    # Download the image from the S3 path and save it to the input directory
+                    try:
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(airi_path) as resp:
+                                if resp.status == 200:
+                                    with open(local_image_path, 'wb') as f:
+                                        f.write(await resp.read())
+                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                else:
+                                    logging.error(f"Failed to download image, status code: {resp.status}")
+                                    return web.json_response({"error": "Failed to download image"}, status=500)
+                    except Exception as e:
+                        logging.error(f"Failed to download image from S3: {str(e)}")
+                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+
+                    # Update the payload with the new image path (GUID)
+                    prompt['30']['inputs']['image'] = image_filename
+
+                # Extract and handle the base_image parameter (similar to airi_path)
+                base_image = json_data.get("base_image")
+                if base_image and base_image not in ["", "null", "undefined", None]:
+                    # Generate a GUID for the base image filename
+                    base_image_filename = str(uuid.uuid4()) + os.path.splitext(base_image)[1]
+                    base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
+                    local_base_image_path = os.path.join(base_image_dir, base_image_filename)
+
+                    # Download the base image from the S3 path and save it to the input directory
+                    try:
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(base_image) as resp:
+                                if resp.status == 200:
+                                    with open(local_base_image_path, 'wb') as f:
+                                        f.write(await resp.read())
+                                    logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
+                                else:
+                                    logging.error(f"Failed to download base image, status code: {resp.status}")
+                                    return web.json_response({"error": "Failed to download base image"}, status=500)
+                    except Exception as e:
+                        logging.error(f"Failed to download base image from S3: {str(e)}")
+                        return web.json_response({"error": "Failed to download base image from S3"}, status=500)
+
+                    # Update the prompt to include the base image in section '35'
+                    if '35' in prompt:
+                        prompt['35']['inputs']['image'] = base_image_filename
+                    else:
+                        # If '35' does not exist, create it and add the base image
+                        prompt['35'] = {
+                            "inputs": {
+                                "image": base_image_filename
+                            }
+                        }
+
+                # Process the prompt
+                valid = execution.validate_prompt(prompt)
+                if not valid[0]:
+                    logging.warning(f"Invalid prompt: {valid[1]}")
+                    return web.json_response({"error": valid[1]}, status=400)
+
+                # Generate a unique ID for this prompt
+                prompt_id = str(uuid.uuid4())
+
+                number = self.number
+                self.number += 1
+
+                # Prepare the extra data if available
+                extra_data = json_data.get("extra_data", {})
+                if "client_id" in json_data:
+                    extra_data["client_id"] = json_data["client_id"]
+
+                # Add prompt to the queue
+                try:
+                    outputs_to_execute = valid[2]
+                    self.prompt_queue.put((number, prompt_id, prompt, extra_data, outputs_to_execute))
+                except asyncio.QueueFull:
+                    logging.error(f"Queue is full, cannot process prompt_id {prompt_id}")
+                    return web.json_response({"error": "Server is busy, please try again later"}, status=503)
+                logging.info("Prompt successfully submitted to the queue")
+
+                # Establish a WebSocket connection manually
+                sid = extra_data.get("client_id", None)
+                if not sid:
+                    return web.json_response({"error": "client_id is required"}, status=400)
+
+                websocket_port = os.getenv('WEBSOCKET_PORT', '7860')
+                websocket_url = f"ws://localhost:{websocket_port}/ws?clientId={sid}"
+                logging.info(f"Connecting to WebSocket URL: {websocket_url}")
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.ws_connect(websocket_url) as ws:
+                        logging.info(f"Connected to WebSocket with client_id: {sid}")
+
+                        image_filenames = []
+                        while True:
+                            try:
+                                msg = await ws.receive(timeout=600)  # 10 minutes timeout for receiving a message
+                                logging.info(f"Received WebSocket message: {msg.data}")
+
+                                if msg.type == aiohttp.WSMsgType.TEXT:
+                                    data = json.loads(msg.data)
+                                    logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
+
+                                    if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
+                                        output = data['data']['output']
+                                        if 'images' in output:
+                                            if output['images']:  # If images list is not empty
+                                                for image_info in output['images']:
+                                                    logging.info(f"Image info: {image_info}")
+                                                    image_filenames.append(image_info.get('filename'))
+                                                break
+                                            else:
+                                                logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                elif msg.type == aiohttp.WSMsgType.ERROR:
+                                    logging.warning(f"WebSocket error: {ws.exception()}")
+
+                            except asyncio.TimeoutError:
+                                logging.warning(f"Timeout while waiting for 'executed' message with images for prompt_id {prompt_id}")
+                                return web.json_response({"error": "Image generation timed out"}, status=500)
+
+                        if image_filenames:
+                            s3_urls = []
+                            thumbnail_urls = []
+                            image_metadata = []
+                            output_dir = os.path.abspath(os.path.join(os.getcwd(), 'output'))
+                            for image_filename in image_filenames:
+                                path = os.path.join(output_dir, image_filename)
+
+                                # Resize the obtained image to create a thumbnail using Pillow
+                                try:
+                                    # Open the original image
+                                    image = Image.open(path)
+
+                                    # Get image size and dimensions
+                                    width, height = image.size
+                                    file_size = os.path.getsize(path)
+
+                                    # Store the image metadata
+                                    image_metadata.append({
+                                        "filename": image_filename,
+                                        "width": width,
+                                        "height": height,
+                                        "size_in_bytes": file_size
+                                    })
+
+                                    # Create a thumbnail
+                                    image.thumbnail((600, 600))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
