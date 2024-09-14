@@ -735,6 +735,7 @@ class PromptServer():
                 return web.json_response({"error": "Internal server error"}, status=500)
 
 
+         # custom api for the idea workflow airi
         @routes.post("/generate_image_01_idea")
         async def generate_image_01_idea(request):
             try:
@@ -745,6 +746,9 @@ class PromptServer():
                 prompt = json_data.get("prompt")
                 if not prompt:
                     return web.json_response({"error": "prompt is required"}, status=400)
+
+                # Initialize variables for file cleanup
+                local_image_path = None
 
                 # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
@@ -899,6 +903,10 @@ class PromptServer():
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
 
+                                    # Remove the input and output files after processing
+                                    os.remove(path)  # Remove the original output image
+                                    os.remove(thumbnail_path)  # Remove the thumbnail
+
                                 except NoCredentialsError:
                                     logging.error("AWS credentials not available")
                                     return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -908,6 +916,10 @@ class PromptServer():
                                 except Exception as e:
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
+
+                            # Remove input files
+                            if local_image_path:
+                                os.remove(local_image_path)
 
                             return web.json_response({
                                 "image_urls": s3_urls, 
@@ -924,6 +936,7 @@ class PromptServer():
                 return web.json_response({"error": "Internal server error"}, status=500)
 
 
+        # custom api for the render workflow airi
         @routes.post("/generate_image_03_render")
         async def generate_image_03_render(request):
             try:
@@ -935,10 +948,14 @@ class PromptServer():
                 if not prompt:
                     return web.json_response({"error": "prompt is required"}, status=400)
 
+                # Initialize variables for file cleanup
+                local_image_path = None
+                local_base_image_path = None
+
                 # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
                 if not airi_path or airi_path in ["", "null", "undefined", None]:
-                    # Replace the image name with "sketch.jpg" if airi_path is invalid
+                    # Replace the image name with "image.png" if airi_path is invalid
                     if '30' in prompt:
                         prompt['30']['inputs']['image'] = "image.png"
                     airi_path = None  # Explicitly set to None for clarity
@@ -994,11 +1011,7 @@ class PromptServer():
                         prompt['35']['inputs']['image'] = base_image_filename
                     else:
                         # If '35' does not exist, create it and add the base image
-                        prompt['35'] = {
-                            "inputs": {
-                                "image": base_image_filename
-                            }
-                        }
+                        prompt['35'] = {"inputs": {"image": base_image_filename}}
 
                 # Process the prompt
                 valid = execution.validate_prompt(prompt)
@@ -1122,6 +1135,10 @@ class PromptServer():
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
 
+                                    # Remove the input and output files after processing
+                                    os.remove(path)  # Remove the original output image
+                                    os.remove(thumbnail_path)  # Remove the thumbnail
+
                                 except NoCredentialsError:
                                     logging.error("AWS credentials not available")
                                     return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -1131,6 +1148,12 @@ class PromptServer():
                                 except Exception as e:
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
+
+                            # Remove input files
+                            if local_image_path:
+                                os.remove(local_image_path)
+                            if local_base_image_path:
+                                os.remove(local_base_image_path)
 
                             return web.json_response({
                                 "image_urls": s3_urls, 
@@ -1147,6 +1170,7 @@ class PromptServer():
                 return web.json_response({"error": "Internal server error"}, status=500)
         
 
+        # custom api for the enhance extend workflow airi
         @routes.post("/generate_image_03_enhance_extend")
         async def generate_image_03_enhance_extend(request):
             try:
@@ -1158,10 +1182,14 @@ class PromptServer():
                 if not prompt:
                     return web.json_response({"error": "prompt is required"}, status=400)
 
+                # Initialize variables for file cleanup
+                local_image_path = None
+                local_base_image_path = None
+
                 # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
                 if not airi_path or airi_path in ["", "null", "undefined", None]:
-                    # Replace the image name with "sketch.jpg" if airi_path is invalid
+                    # Replace the image name with "image.png" if airi_path is invalid
                     if '30' in prompt:
                         prompt['30']['inputs']['image'] = "image.png"
                     airi_path = None  # Explicitly set to None for clarity
@@ -1217,11 +1245,7 @@ class PromptServer():
                         prompt['35']['inputs']['image'] = base_image_filename
                     else:
                         # If '35' does not exist, create it and add the base image
-                        prompt['35'] = {
-                            "inputs": {
-                                "image": base_image_filename
-                            }
-                        }
+                        prompt['35'] = {"inputs": {"image": base_image_filename}}
 
                 # Process the prompt
                 valid = execution.validate_prompt(prompt)
@@ -1345,6 +1369,10 @@ class PromptServer():
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
 
+                                    # Remove the input and output files after processing
+                                    os.remove(path)  # Remove the original output image
+                                    os.remove(thumbnail_path)  # Remove the thumbnail
+
                                 except NoCredentialsError:
                                     logging.error("AWS credentials not available")
                                     return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -1355,9 +1383,15 @@ class PromptServer():
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
 
+                            # Remove the input files after processing
+                            if local_image_path:
+                                os.remove(local_image_path)  # Remove the input image
+                            if local_base_image_path:
+                                os.remove(local_base_image_path)  # Remove the base image
+
                             return web.json_response({
-                                "image_urls": s3_urls, 
-                                "image_thumbnail_urls": thumbnail_urls, 
+                                "image_urls": s3_urls,
+                                "image_thumbnail_urls": thumbnail_urls,
                                 "image_metadata": image_metadata
                             })
                         else:
@@ -1382,15 +1416,19 @@ class PromptServer():
                 if not prompt:
                     return web.json_response({"error": "prompt is required"}, status=400)
 
+                # Initialize variables for file cleanup
+                local_image_path = None
+                local_base_image_path = None
+                local_mask_image_path = None
+
                 # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
                 if not airi_path or airi_path in ["", "null", "undefined", None]:
-                    # Replace the image name with "image.png" if airi_path is invalid
                     if '30' in prompt:
                         prompt['30']['inputs']['image'] = "image.png"
                     airi_path = None  # Explicitly set to None for clarity
                 else:
-                    # Generate a GUID for the image filename only if airi_path is valid
+                    # Generate a GUID for the image filename
                     image_filename = str(uuid.uuid4()) + os.path.splitext(airi_path)[1]
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
@@ -1413,10 +1451,9 @@ class PromptServer():
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
 
-                # Extract and handle the base_image parameter (similar to airi_path)
+                # Extract and handle the base_image parameter
                 base_image = json_data.get("base_image")
                 if base_image and base_image not in ["", "null", "undefined", None]:
-                    # Generate a GUID for the base image filename
                     base_image_filename = str(uuid.uuid4()) + os.path.splitext(base_image)[1]
                     base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_base_image_path = os.path.join(base_image_dir, base_image_filename)
@@ -1440,14 +1477,9 @@ class PromptServer():
                     if '35' in prompt:
                         prompt['35']['inputs']['image'] = base_image_filename
                     else:
-                        # If '35' does not exist, create it and add the base image
-                        prompt['35'] = {
-                            "inputs": {
-                                "image": base_image_filename
-                            }
-                        }
+                        prompt['35'] = {"inputs": {"image": base_image_filename}}
 
-                # Extract and handle the mask_image parameter (similar to base_image)
+                # Extract and handle the mask_image parameter
                 mask_image = json_data.get("mask_image")
                 if mask_image and mask_image not in ["", "null", "undefined", None]:
                     mask_image_filename = str(uuid.uuid4()) + os.path.splitext(mask_image)[1]
@@ -1473,11 +1505,7 @@ class PromptServer():
                     if '101' in prompt:
                         prompt['101']['inputs']['image'] = mask_image_filename
                     else:
-                        prompt['101'] = {
-                            "inputs": {
-                                "image": mask_image_filename
-                            }
-                        }
+                        prompt['101'] = {"inputs": {"image": mask_image_filename}}
 
                 # Process the prompt
                 valid = execution.validate_prompt(prompt)
@@ -1599,6 +1627,10 @@ class PromptServer():
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
 
+                                    # Remove the input and output files after processing
+                                    os.remove(path)  # Remove the original output image
+                                    os.remove(thumbnail_path)  # Remove the thumbnail
+
                                 except NoCredentialsError:
                                     logging.error("AWS credentials not available")
                                     return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -1608,6 +1640,14 @@ class PromptServer():
                                 except Exception as e:
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
+
+                            # Remove the input files after processing
+                            if local_image_path:
+                                os.remove(local_image_path)  # Remove the input image
+                            if local_base_image_path:
+                                os.remove(local_base_image_path)  # Remove the base image
+                            if local_mask_image_path:
+                                os.remove(local_mask_image_path)  # Remove the mask image
 
                             return web.json_response({
                                 "image_urls": s3_urls,
@@ -1624,7 +1664,7 @@ class PromptServer():
                 return web.json_response({"error": "Internal server error"}, status=500)
 
 
-        # custom api for the render workflow airi
+        # custom api for the cn inpainting workflow airi
         @routes.post("/generate_image_03_edit_cn_inpainting")
         async def generate_image_03_edit_cn_inpainting(request):
             try:
@@ -1636,15 +1676,17 @@ class PromptServer():
                 if not prompt:
                     return web.json_response({"error": "prompt is required"}, status=400)
 
+                # Initialize variables for cleanup later
+                local_image_path, local_base_image_path, local_mask_image_path, local_cn_image_path = None, None, None, None
+
                 # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
                 if not airi_path or airi_path in ["", "null", "undefined", None]:
-                    # Replace the image name with "image.png" if airi_path is invalid
                     if '30' in prompt:
                         prompt['30']['inputs']['image'] = "image.png"
                     airi_path = None  # Explicitly set to None for clarity
                 else:
-                    # Generate a GUID for the image filename only if airi_path is valid
+                    # Generate a GUID for the image filename
                     image_filename = str(uuid.uuid4()) + os.path.splitext(airi_path)[1]
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
@@ -1667,10 +1709,9 @@ class PromptServer():
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
 
-                # Extract and handle the base_image parameter (similar to airi_path)
+                # Extract and handle the base_image parameter
                 base_image = json_data.get("base_image")
                 if base_image and base_image not in ["", "null", "undefined", None]:
-                    # Generate a GUID for the base image filename
                     base_image_filename = str(uuid.uuid4()) + os.path.splitext(base_image)[1]
                     base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_base_image_path = os.path.join(base_image_dir, base_image_filename)
@@ -1694,14 +1735,9 @@ class PromptServer():
                     if '35' in prompt:
                         prompt['35']['inputs']['image'] = base_image_filename
                     else:
-                        # If '35' does not exist, create it and add the base image
-                        prompt['35'] = {
-                            "inputs": {
-                                "image": base_image_filename
-                            }
-                        }
+                        prompt['35'] = {"inputs": {"image": base_image_filename}}
 
-                # Extract and handle the mask_image parameter (similar to base_image)
+                # Extract and handle the mask_image parameter
                 mask_image = json_data.get("mask_image")
                 if mask_image and mask_image not in ["", "null", "undefined", None]:
                     mask_image_filename = str(uuid.uuid4()) + os.path.splitext(mask_image)[1]
@@ -1727,13 +1763,9 @@ class PromptServer():
                     if '101' in prompt:
                         prompt['101']['inputs']['image'] = mask_image_filename
                     else:
-                        prompt['101'] = {
-                            "inputs": {
-                                "image": mask_image_filename
-                            }
-                        }
+                        prompt['101'] = {"inputs": {"image": mask_image_filename}}
 
-                # Extract and handle the cn_image parameter (similar to base_image)
+                # Extract and handle the cn_image parameter
                 cn_image = json_data.get("cn_image")
                 if cn_image and cn_image not in ["", "null", "undefined", None]:
                     cn_image_filename = str(uuid.uuid4()) + os.path.splitext(cn_image)[1]
@@ -1747,24 +1779,19 @@ class PromptServer():
                                 if resp.status == 200:
                                     with open(local_cn_image_path, 'wb') as f:
                                         f.write(await resp.read())
-                                    logging.info(f"Mask image successfully downloaded and saved to {local_cn_image_path}")
+                                    logging.info(f"CN image successfully downloaded and saved to {local_cn_image_path}")
                                 else:
-                                    logging.error(f"Failed to download mask image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download mask image"}, status=500)
+                                    logging.error(f"Failed to download CN image, status code: {resp.status}")
+                                    return web.json_response({"error": "Failed to download CN image"}, status=500)
                     except Exception as e:
-                        logging.error(f"Failed to download mask image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download mask image from S3"}, status=500)
+                        logging.error(f"Failed to download CN image from S3: {str(e)}")
+                        return web.json_response({"error": "Failed to download CN image from S3"}, status=500)
 
-                    # Update the prompt to include the mask image in section '101'
+                    # Update the prompt to include the CN image in section '100'
                     if '100' in prompt:
                         prompt['100']['inputs']['image'] = cn_image_filename
                     else:
-                        prompt['100'] = {
-                            "inputs": {
-                                "image": cn_image_filename
-                            }
-                        }
-
+                        prompt['100'] = {"inputs": {"image": cn_image_filename}}
 
                 # Process the prompt
                 valid = execution.validate_prompt(prompt)
@@ -1886,6 +1913,10 @@ class PromptServer():
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
 
+                                    # Remove the input and output files after processing
+                                    os.remove(path)  # Remove the original output image
+                                    os.remove(thumbnail_path)  # Remove the thumbnail
+
                                 except NoCredentialsError:
                                     logging.error("AWS credentials not available")
                                     return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -1895,6 +1926,16 @@ class PromptServer():
                                 except Exception as e:
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
+
+                            # Remove the input files after processing
+                            if local_image_path:
+                                os.remove(local_image_path)  # Remove the input image
+                            if local_base_image_path:
+                                os.remove(local_base_image_path)  # Remove the base image
+                            if local_mask_image_path:
+                                os.remove(local_mask_image_path)  # Remove the mask image
+                            if local_cn_image_path:
+                                os.remove(local_cn_image_path)  # Remove the CN image
 
                             return web.json_response({
                                 "image_urls": s3_urls,
@@ -1911,7 +1952,7 @@ class PromptServer():
                 return web.json_response({"error": "Internal server error"}, status=500)
 
 
-
+        # custom api for the enhance upscale workflow airi
         @routes.post("/generate_image_04_enhance_upscale_basic_api")
         async def generate_image_04_enhance_upscale_basic_api(request):
             try:
@@ -1925,6 +1966,7 @@ class PromptServer():
 
                 # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
+                local_image_path = None
                 if not airi_path or airi_path in ["", "null", "undefined", None]:
                     if '35' in prompt:
                         prompt['35']['inputs']['image'] = "image.png"
@@ -2073,6 +2115,9 @@ class PromptServer():
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
 
+                                    os.remove(path)
+                                    os.remove(thumbnail_path)
+
                                 except NoCredentialsError:
                                     logging.error("AWS credentials not available")
                                     return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -2082,6 +2127,9 @@ class PromptServer():
                                 except Exception as e:
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
+
+                            if local_image_path:
+                                os.remove(local_image_path)
 
                             return web.json_response({
                                 "image_urls": s3_urls, 
