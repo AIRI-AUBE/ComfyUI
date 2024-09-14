@@ -869,7 +869,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((200, 200))
+                                    image.thumbnail((200, height))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
@@ -1092,7 +1092,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((200, 200))
+                                    image.thumbnail((200, height))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
@@ -1315,7 +1315,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((600, 600))
+                                    image.thumbnail((600, height))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
@@ -1569,7 +1569,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((200, 200))
+                                    image.thumbnail((200, height))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
@@ -1856,7 +1856,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((200, 200))
+                                    image.thumbnail((200, height))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
@@ -2043,7 +2043,7 @@ class PromptServer():
                                     })
 
                                     # Create a thumbnail
-                                    image.thumbnail((600, 600))
+                                    image.thumbnail((600, height))
 
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
