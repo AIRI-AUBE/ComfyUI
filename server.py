@@ -2269,7 +2269,8 @@ class PromptServer():
                 if not sid:
                     return web.json_response({"error": "client_id is required"}, status=400)
 
-                websocket_url = f"ws://localhost:7860/ws?clientId={sid}"
+                websocket_port = os.getenv('WEBSOCKET_PORT', '7860')
+                websocket_url = f"ws://localhost:{websocket_port}/ws?clientId={sid}"
                 logging.info(f"Connecting to WebSocket URL: {websocket_url}")
 
                 async with aiohttp.ClientSession() as session:
