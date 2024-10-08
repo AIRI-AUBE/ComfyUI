@@ -673,7 +673,7 @@ class PromptServer():
                         image_filename = None
                         while True:
                             try:
-                                msg = await ws.receive(timeout=60)  # 60 seconds timeout for receiving a message
+                                msg = await ws.receive()  # 60 seconds timeout for receiving a message
                                 logging.info(f"Received WebSocket message: {msg}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -735,7 +735,7 @@ class PromptServer():
                 return web.json_response({"error": "Internal server error"}, status=500)
 
 
-         # custom api for the idea workflow airi
+        # custom api for the idea workflow airi
         @routes.post("/generate_image_01_idea")
         async def generate_image_01_idea(request):
             try:
@@ -823,7 +823,7 @@ class PromptServer():
                         image_filenames = []
                         while True:
                             try:
-                                msg = await ws.receive(timeout=600)  # 10 minutes timeout for receiving a message
+                                msg = await ws.receive()  # 10 minutes timeout for receiving a message
                                 logging.info(f"Received WebSocket message: {msg.data}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -834,7 +834,7 @@ class PromptServer():
                                         output = data['data']['output']
                                         if output is not None:
                                             if 'images' in output:
-                                                if output['images']:  # If images list is not empty
+                                                if output['images']:
                                                     for image_info in output['images']:
                                                         logging.info(f"Image info: {image_info}")
                                                         image_filenames.append(image_info.get('filename'))
@@ -1057,7 +1057,7 @@ class PromptServer():
                         final_image_received = False
                         while True:
                             try:
-                                msg = await ws.receive(timeout=600)  # 10 minutes timeout for receiving a message
+                                msg = await ws.receive()  # 10 minutes timeout for receiving a message
                                 logging.info(f"Received WebSocket message: {msg.data}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -1288,7 +1288,7 @@ class PromptServer():
                         final_image_received = False
                         while True:
                             try:
-                                msg = await ws.receive(timeout=600)  # 10 minutes timeout
+                                msg = await ws.receive()  # 10 minutes timeout
                                 logging.info(f"Received WebSocket message: {msg.data}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -1528,7 +1528,7 @@ class PromptServer():
                         image_filenames = []
                         while True:
                             try:
-                                msg = await ws.receive(timeout=600)  # 10 minutes timeout for receiving a message
+                                msg = await ws.receive()  # 10 minutes timeout for receiving a message
                                 logging.info(f"Received WebSocket message: {msg.data}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -1791,7 +1791,7 @@ class PromptServer():
                         image_filenames = []
                         while True:
                             try:
-                                msg = await ws.receive(timeout=600)  # 10 minutes timeout for receiving a message
+                                msg = await ws.receive()  # 10 minutes timeout for receiving a message
                                 logging.info(f"Received WebSocket message: {msg.data}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -2078,7 +2078,7 @@ class PromptServer():
                         image_filenames = []
                         while True:
                             try:
-                                msg = await ws.receive(timeout=600)  # 10 minutes timeout for receiving a message
+                                msg = await ws.receive()  # 10 minutes timeout for receiving a message
                                 logging.info(f"Received WebSocket message: {msg.data}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -2269,7 +2269,8 @@ class PromptServer():
                 if not sid:
                     return web.json_response({"error": "client_id is required"}, status=400)
 
-                websocket_url = f"ws://localhost:7860/ws?clientId={sid}"
+                websocket_port = os.getenv('WEBSOCKET_PORT', '7860')
+                websocket_url = f"ws://localhost:{websocket_port}/ws?clientId={sid}"
                 logging.info(f"Connecting to WebSocket URL: {websocket_url}")
 
                 async with aiohttp.ClientSession() as session:
@@ -2279,7 +2280,7 @@ class PromptServer():
                         image_filenames = []
                         while True:
                             try:
-                                msg = await ws.receive(timeout=600)  # 10 minutes timeout for receiving a message
+                                msg = await ws.receive()  # 10 minutes timeout for receiving a message
                                 logging.info(f"Received WebSocket message: {msg.data}")
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
