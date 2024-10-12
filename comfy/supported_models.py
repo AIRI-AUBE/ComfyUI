@@ -315,41 +315,6 @@ class SVD_img2vid(supported_models_base.BASE):
     def clip_target(self, state_dict={}):
         return None
 
-class SV3D_u(SVD_img2vid):
-    unet_config = {
-        "model_channels": 320,
-        "in_channels": 8,
-        "use_linear_in_transformer": True,
-        "transformer_depth": [1, 1, 1, 1, 1, 1, 0, 0],
-        "context_dim": 1024,
-        "adm_in_channels": 256,
-        "use_temporal_attention": True,
-        "use_temporal_resblock": True
-    }
-
-    vae_key_prefix = ["conditioner.embedders.1.encoder."]
-
-    def get_model(self, state_dict, prefix="", device=None):
-        out = model_base.SV3D_u(self, device=device)
-        return out
-
-class SV3D_p(SV3D_u):
-    unet_config = {
-        "model_channels": 320,
-        "in_channels": 8,
-        "use_linear_in_transformer": True,
-        "transformer_depth": [1, 1, 1, 1, 1, 1, 0, 0],
-        "context_dim": 1024,
-        "adm_in_channels": 1280,
-        "use_temporal_attention": True,
-        "use_temporal_resblock": True
-    }
-
-
-    def get_model(self, state_dict, prefix="", device=None):
-        out = model_base.SV3D_p(self, device=device)
-        return out
-
 class Stable_Zero123(supported_models_base.BASE):
     unet_config = {
         "context_dim": 768,

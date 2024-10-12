@@ -37,6 +37,7 @@ import importlib
 import folder_paths
 import latent_preview
 import node_helpers
+import random
 
 def before_node_execution():
     comfy.model_management.throw_exception_if_processing_interrupted()
@@ -1562,8 +1563,9 @@ class SaveImage:
     CATEGORY = "image"
     DESCRIPTION = "Saves the input images to your ComfyUI output directory."
 
-    def save_images(self, images, filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None):
-        filename_prefix += self.prefix_append
+    def save_images(self, images, filename_prefix="AIRI", prompt=None, extra_pnginfo=None, quality=80):
+        random_number = random.randint(100000, 999999)  
+        filename_prefix += self.prefix_append + "_" + str(random_number)
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, images[0].shape[1], images[0].shape[0])
         results = list()
         for (batch_number, image) in enumerate(images):
@@ -1579,8 +1581,8 @@ class SaveImage:
                         metadata.add_text(x, json.dumps(extra_pnginfo[x]))
 
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
-            file = f"{filename_with_batch_num}_{counter:05}_.png"
-            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level)
+            file = f"{filename_with_batch_num}_{counter:05}_.jpg"
+            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level, quality=quality)
             results.append({
                 "filename": file,
                 "subfolder": subfolder,
