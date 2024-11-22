@@ -6291,7 +6291,7 @@ class PromptServer():
 
         # custom api for the enhance roadrender workflow airi
         @routes.post("/generate_image_roadrender")
-        async def generate_image_04_enhance_upscale_basic_api(request):
+        async def generate_image_roadrender(request):
             try:
                 logging.info("Started processing request in generate_image")
 
