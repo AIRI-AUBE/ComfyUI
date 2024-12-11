@@ -4575,6 +4575,11 @@ class PromptServer():
 
                                 if msg.type == aiohttp.WSMsgType.TEXT:
                                     data = json.loads(msg.data)
+
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
+                                    
                                     if data.get('type') == 'executed' and data['data']['prompt_id'] == prompt_id:
                                         output = data['data']['output']
                                         if 'images' in output and output['images']:
@@ -4726,6 +4731,10 @@ class PromptServer():
                                 if msg.type == aiohttp.WSMsgType.TEXT:
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
+
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
 
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
@@ -4961,6 +4970,11 @@ class PromptServer():
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
                                     finalImage = 0
+
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
+
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
                                         if output is not None:
@@ -5191,6 +5205,10 @@ class PromptServer():
                                 if msg.type == aiohttp.WSMsgType.TEXT:
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
+
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
 
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
@@ -5431,6 +5449,10 @@ class PromptServer():
                                 if msg.type == aiohttp.WSMsgType.TEXT:
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
+                                    
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
 
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
@@ -5694,6 +5716,10 @@ class PromptServer():
                                 if msg.type == aiohttp.WSMsgType.TEXT:
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
+                                    
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
 
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
@@ -5982,6 +6008,10 @@ class PromptServer():
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
 
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
+
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
                                         if output is not None:
@@ -6183,6 +6213,10 @@ class PromptServer():
                                 if msg.type == aiohttp.WSMsgType.TEXT:
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
+
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
 
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
@@ -6410,6 +6444,10 @@ class PromptServer():
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
 
+                                    if data.get('type') == 'execution_interrupted':
+                                        logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
+                                        return web.json_response({"error": "Execution interrupted", "details": data['data']}, status=400)
+                                    
                                     if data.get('type') == 'executed' and data['data'].get('prompt_id') == prompt_id:
                                         output = data['data']['output']
                                         if output is not None:
