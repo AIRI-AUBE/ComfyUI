@@ -1,3 +1,4 @@
+import os
 import sys
 import asyncio
 import traceback
@@ -32,6 +33,7 @@ from app.model_manager import ModelFileManager
 from typing import Optional
 from api_server.routes.internal.internal_routes import InternalRoutes
 
+import base64
 import boto3
 import os
 
