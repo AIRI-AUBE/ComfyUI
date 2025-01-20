@@ -42,6 +42,11 @@ AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '7860')
 AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME', '7860')
 AWS_REGION = os.getenv('AWS_REGION', '7860')
 
+AWS_ACCESS_KEY_ID_SG = os.getenv('AWS_ACCESS_KEY_ID_SG', '7860')
+AWS_SECRET_ACCESS_KEY_SG = os.getenv('AWS_SECRET_ACCESS_KEY_SG', '7860')
+AWS_BUCKET_NAME_SG = os.getenv('AWS_BUCKET_NAME_SG', '7860')
+AWS_REGION_SG = os.getenv('AWS_REGION_SG', '7860')
+
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
     UNENCODED_PREVIEW_IMAGE = 2
@@ -787,24 +792,42 @@ class PromptServer():
                             output_dir = os.path.abspath(os.path.join(os.getcwd(), 'output'))
                             path = os.path.join(output_dir, image_filename)
 
+                            region = json_data.get("region", "default")
+
+                            if region == "SG":
+                                aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                aws_region = AWS_REGION_SG
+                                aws_bucket_name = AWS_BUCKET_NAME_SG
+                                s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                            else:
+                                aws_access_key_id = AWS_ACCESS_KEY_ID
+                                aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                aws_region = AWS_REGION
+                                aws_bucket_name = AWS_BUCKET_NAME
+                                s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                            # Initialize the S3 client
+                            s3_client = boto3.client(
+                                's3',
+                                aws_access_key_id=aws_access_key_id,
+                                aws_secret_access_key=aws_secret_access_key,
+                                region_name=aws_region,
+                            )
+
+                            # Generate a unique file name
+                            new_filename = str(uuid.uuid4()) + '.jpg'
+                            s3_key = f"devEnv/{new_filename}"
+
                             try:
-                                # Upload the image to AWS S3
-                                s3_client = boto3.client(
-                                    's3',
-                                    aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                    region_name=AWS_REGION,
-                                )
-                                new_filename = str(uuid.uuid4()) + '.jpg'
-                                s3_key = f"devEnv/{new_filename}" 
+                                # Upload the file to the appropriate S3 bucket
+                                s3_client.upload_file(path, aws_bucket_name, s3_key, ExtraArgs={'ACL': 'public-read'})
 
-                                s3_client.upload_file(path, AWS_BUCKET_NAME, s3_key,ExtraArgs={'ACL': 'public-read'})
-
-                                # Get the S3 URL
-                                s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{s3_key}"
-
+                                # Construct the public URL for the uploaded file
+                                s3_url = f"{s3_url_base}/{s3_key}"
                                 logging.info("Image successfully uploaded to S3")
                                 return web.json_response({"image_url": s3_url})
+
                             except NoCredentialsError:
                                 logging.error("AWS credentials not available")
                                 return web.json_response({"error": "AWS credentials not available"}, status=500)
@@ -814,6 +837,7 @@ class PromptServer():
                             except Exception as e:
                                 logging.error(f"Failed to process image: {str(e)}")
                                 return web.json_response({"error": "Failed to process the image"}, status=500)
+
                         else:
                             return web.json_response({"error": "Failed to generate image"}, status=500)
 
@@ -973,25 +997,41 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                    # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
@@ -1009,6 +1049,7 @@ class PromptServer():
                                 except Exception as e:
                                     logging.error(f"Failed to process image: {str(e)}")
                                     return web.json_response({"error": "Failed to process the image"}, status=500)
+
 
                             # Remove input files
                             if local_image_path:
@@ -1210,25 +1251,42 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                     # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
@@ -1449,25 +1507,42 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                     # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
@@ -1688,25 +1763,42 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                     # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
@@ -1953,25 +2045,42 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                     # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
@@ -2244,25 +2353,42 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                     # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
@@ -2452,25 +2578,42 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                     # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
@@ -2682,25 +2825,42 @@ class PromptServer():
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
 
-                                    # Upload both original and thumbnail to S3
+                                     # Region-based AWS configuration using pre-declared variables
+                                    region = json_data.get("region", "default")
+                                    if region == "SG":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
+                                        aws_region = AWS_REGION_SG
+                                        aws_bucket_name = AWS_BUCKET_NAME_SG
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                    else:
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
+                                        aws_region = AWS_REGION
+                                        aws_bucket_name = AWS_BUCKET_NAME
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+                                    # Initialize S3 client
                                     s3_client = boto3.client(
                                         's3',
-                                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                                        region_name=AWS_REGION,
+                                        aws_access_key_id=aws_access_key_id,
+                                        aws_secret_access_key=aws_secret_access_key,
+                                        region_name=aws_region,
                                     )
+
+                                    # Generate unique filenames for S3
                                     new_filename = str(uuid.uuid4()) + '.jpg'
-                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
                                     original_s3_key = f"devEnv/{new_filename}"
+                                    thumbnail_s3_key = f"devEnv/thumbnail_{new_filename}"
 
                                     # Upload the original image
-                                    s3_client.upload_file(path, AWS_BUCKET_NAME, original_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{original_s3_key}"
-                                    s3_urls.append(s3_url)
+                                    s3_client.upload_file(path, aws_bucket_name, original_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    original_s3_url = f"{s3_url_base}/{original_s3_key}"
+                                    s3_urls.append(original_s3_url)
 
                                     # Upload the thumbnail image
-                                    s3_client.upload_file(thumbnail_path, AWS_BUCKET_NAME, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
-                                    thumbnail_s3_url = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn/{thumbnail_s3_key}"
+                                    s3_client.upload_file(thumbnail_path, aws_bucket_name, thumbnail_s3_key, ExtraArgs={'ACL': 'public-read'})
+                                    thumbnail_s3_url = f"{s3_url_base}/{thumbnail_s3_key}"
                                     thumbnail_urls.append(thumbnail_s3_url)
 
                                     logging.info("Images and thumbnails successfully uploaded to S3")
