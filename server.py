@@ -1154,7 +1154,6 @@ class PromptServer():
                                 if msg.type == aiohttp.WSMsgType.TEXT:
                                     data = json.loads(msg.data)
                                     logging.info(f"WebSocket message content: {json.dumps(data, indent=2)}")
-                                    finalImage = 0
 
                                     if data.get('type') == 'execution_interrupted':
                                         logging.warning(f"Execution interrupted for prompt_id {prompt_id}")
