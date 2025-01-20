@@ -799,13 +799,13 @@ class PromptServer():
                                 aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                 aws_region = AWS_REGION_SG
                                 aws_bucket_name = AWS_BUCKET_NAME_SG
-                                s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                             else:
                                 aws_access_key_id = AWS_ACCESS_KEY_ID
                                 aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                 aws_region = AWS_REGION
                                 aws_bucket_name = AWS_BUCKET_NAME
-                                s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                             # Initialize the S3 client
                             s3_client = boto3.client(
@@ -963,7 +963,8 @@ class PromptServer():
                             except asyncio.TimeoutError:
                                 logging.warning(f"Timeout while waiting for 'executed' message with images for prompt_id {prompt_id}")
                                 return web.json_response({"error": "Image generation timed out"}, status=500)
-
+                        
+                        print("starting the image files upload")
                         if image_filenames:
                             s3_urls = []
                             thumbnail_urls = []
@@ -991,12 +992,12 @@ class PromptServer():
 
                                     # Create a thumbnail
                                     image.thumbnail((200, height))
-
+                                    print("thumbnail came in");
                                     # Save the thumbnail
                                     thumbnail_filename = "thumbnail_" + image_filename
                                     thumbnail_path = os.path.join(output_dir, thumbnail_filename)
                                     image.save(thumbnail_path)
-
+                                    print("starting s3");
                                     # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
                                     if region == "SG":
@@ -1004,13 +1005,19 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    
+                                    print(f"AWS Access Key ID: {aws_access_key_id}")
+                                    print(f"AWS Secret Access Key: {aws_secret_access_key}")
+                                    print(f"AWS Region: {aws_region}")
+                                    print(f"AWS Bucket Name: {aws_bucket_name}")
+                                    print(f"S3 URL Base: {s3_url_base}")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -1258,13 +1265,13 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -1514,13 +1521,13 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -1770,13 +1777,13 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -2052,13 +2059,13 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -2360,13 +2367,13 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -2585,13 +2592,13 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -2832,13 +2839,13 @@ class PromptServer():
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com.cn"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                         aws_region = AWS_REGION
                                         aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
