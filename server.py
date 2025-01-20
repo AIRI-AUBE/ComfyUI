@@ -924,7 +924,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -1158,7 +1158,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -1394,7 +1394,7 @@ class PromptServer():
                                                             image_filenames.append(image_info.get('filename'))
                                                         break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -1629,7 +1629,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -1892,7 +1892,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -2179,7 +2179,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -2381,7 +2381,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -2708,7 +2708,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -2947,7 +2947,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -3187,7 +3187,7 @@ class PromptServer():
                                                             image_filenames.append(image_info.get('filename'))
                                                         break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -3426,7 +3426,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -3693,7 +3693,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -3984,7 +3984,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -4190,7 +4190,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -4420,7 +4420,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -4746,7 +4746,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -4985,7 +4985,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -5225,7 +5225,7 @@ class PromptServer():
                                                             image_filenames.append(image_info.get('filename'))
                                                         break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -5464,7 +5464,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -5731,7 +5731,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -6022,7 +6022,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -6228,7 +6228,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
@@ -6458,7 +6458,7 @@ class PromptServer():
                                                         image_filenames.append(image_info.get('filename'))
                                                     break
                                                 else:
-                                                    logging.info(f"Received 'executed' message but images are empty. Waiting for images...")
+                                                    logging.info("Received 'executed' message but images are empty. Waiting for images...")
                                 elif msg.type == aiohttp.WSMsgType.ERROR:
                                     logging.warning(f"WebSocket error: {ws.exception()}")
 
