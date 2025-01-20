@@ -33,9 +33,7 @@ from app.model_manager import ModelFileManager
 from typing import Optional
 from api_server.routes.internal.internal_routes import InternalRoutes
 
-import base64
 import boto3
-import os
 
 from botocore.exceptions import NoCredentialsError, ClientError
 
@@ -1148,7 +1146,6 @@ class PromptServer():
                         logging.info(f"Connected to WebSocket with client_id: {sid}")
 
                         image_filenames = []
-                        final_image_received = False
                         while True:
                             try:
                                 msg = await ws.receive()  # 10 minutes timeout for receiving a message
@@ -1384,7 +1381,6 @@ class PromptServer():
                         logging.info(f"Connected to WebSocket with client_id: {sid}")
 
                         image_filenames = []
-                        final_image_received = False
                         while True:
                             try:
                                 msg = await ws.receive()  # 10 minutes timeout
