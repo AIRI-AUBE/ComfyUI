@@ -47,6 +47,11 @@ AWS_SECRET_ACCESS_KEY_SG = os.getenv('AWS_SECRET_ACCESS_KEY_SG', '7860')
 AWS_BUCKET_NAME_SG = os.getenv('AWS_BUCKET_NAME_SG', '7860')
 AWS_REGION_SG = os.getenv('AWS_REGION_SG', '7860')
 
+AWS_ACCESS_KEY_ID_EU = os.getenv('AWS_ACCESS_KEY_ID_EU', '7860')
+AWS_SECRET_ACCESS_KEY_EU = os.getenv('AWS_SECRET_ACCESS_KEY_EU', '7860')
+AWS_BUCKET_NAME_EU = os.getenv('AWS_BUCKET_NAME_EU', '7860')
+AWS_REGION_EU = os.getenv('AWS_REGION_EU', '7860')
+
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
     UNENCODED_PREVIEW_IMAGE = 2
@@ -800,12 +805,19 @@ class PromptServer():
                                 aws_region = AWS_REGION_SG
                                 aws_bucket_name = AWS_BUCKET_NAME_SG
                                 s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                            elif region == "EU":
+                                aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                aws_region = AWS_REGION_EU
+                                aws_bucket_name = AWS_BUCKET_NAME_EU
+                                s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                             else:
                                 aws_access_key_id = AWS_ACCESS_KEY_ID
                                 aws_secret_access_key = AWS_SECRET_ACCESS_KEY
                                 aws_region = AWS_REGION
                                 aws_bucket_name = AWS_BUCKET_NAME
                                 s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+
 
                             # Initialize the S3 client
                             s3_client = boto3.client(
@@ -1006,6 +1018,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
@@ -1266,6 +1284,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
@@ -1522,6 +1546,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
@@ -1778,6 +1808,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
@@ -2060,6 +2096,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
@@ -2368,6 +2410,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
@@ -2593,6 +2641,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
@@ -2840,6 +2894,12 @@ class PromptServer():
                                         aws_region = AWS_REGION_SG
                                         aws_bucket_name = AWS_BUCKET_NAME_SG
                                         s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
+                                    elif region == "EU":
+                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
+                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
+                                        aws_region = AWS_REGION_EU
+                                        aws_bucket_name = AWS_BUCKET_NAME_EU
+                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
                                     else:
                                         aws_access_key_id = AWS_ACCESS_KEY_ID
                                         aws_secret_access_key = AWS_SECRET_ACCESS_KEY
