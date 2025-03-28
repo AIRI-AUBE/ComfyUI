@@ -874,20 +874,72 @@ class PromptServer():
                 # Initialize variables for file cleanup
                 local_image_path = None
 
-                # Extract and validate the airi_path parameter
+               # Extract and validate the airi_path parameter
                 airi_path = json_data.get("airi_path")
-                if not airi_path or airi_path in ["", "null", "undefined", None]:
+
+                # Handle the case where airi_path is a comma-separated string of two URLs
+                if isinstance(airi_path, str) and ',' in airi_path:
+                    airi_path = [{"url": url.strip()} for url in airi_path.split(',')]
+
+                if isinstance(airi_path, list) and len(airi_path) == 2:
+                    # Handle the case where airi_path contains two images
+                    input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
+
+                    # Process the first ref image
+                    first_image = airi_path[0]
+                    first_image_filename = str(uuid.uuid4()) + os.path.splitext(first_image['url'])[1]
+                    first_image_path = os.path.join(input_dir, first_image_filename)
+
+                    try:
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(first_image['url']) as resp:
+                                if resp.status == 200:
+                                    with open(first_image_path, 'wb') as f:
+                                        f.write(await resp.read())
+                                    logging.info(f"First image successfully downloaded and saved to {first_image_path}")
+                                else:
+                                    logging.error(f"Failed to download first image, status code: {resp.status}")
+                                    return web.json_response({"error": "Failed to download first image"}, status=500)
+                    except Exception as e:
+                        logging.error(f"Failed to download first image from URL: {str(e)}")
+                        return web.json_response({"error": "Failed to download first image"}, status=500)
+
+                    # Update the payload with the first image path
+                    prompt['30']['inputs']['image'] = first_image_filename
+
+                    # Process the second ref image
+                    second_image = airi_path[1]
+                    second_image_filename = str(uuid.uuid4()) + os.path.splitext(second_image['url'])[1]
+                    second_image_path = os.path.join(input_dir, second_image_filename)
+
+                    try:
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(second_image['url']) as resp:
+                                if resp.status == 200:
+                                    with open(second_image_path, 'wb') as f:
+                                        f.write(await resp.read())
+                                    logging.info(f"Second image successfully downloaded and saved to {second_image_path}")
+                                else:
+                                    logging.error(f"Failed to download second image, status code: {resp.status}")
+                                    return web.json_response({"error": "Failed to download second image"}, status=500)
+                    except Exception as e:
+                        logging.error(f"Failed to download second image from URL: {str(e)}")
+                        return web.json_response({"error": "Failed to download second image"}, status=500)
+
+                    # Update the payload with the second image path
+                    prompt['31']['inputs']['image'] = second_image_filename
+
+                elif not airi_path or airi_path in ["", "null", "undefined", None]:
                     # Replace the image name with "image.png" if airi_path is invalid
                     if '30' in prompt:
                         prompt['30']['inputs']['image'] = "image.png"
                     airi_path = None  # Explicitly set to None for clarity
                 else:
-                    # Generate a GUID for the image filename only if airi_path is valid
+                    # Handle the case where airi_path is a single image URL
                     image_filename = str(uuid.uuid4()) + os.path.splitext(airi_path)[1]
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
                     try:
                         async with aiohttp.ClientSession() as session:
                             async with session.get(airi_path) as resp:
@@ -899,10 +951,10 @@ class PromptServer():
                                     logging.error(f"Failed to download image, status code: {resp.status}")
                                     return web.json_response({"error": "Failed to download image"}, status=500)
                     except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                        logging.error(f"Failed to download image from URL: {str(e)}")
+                        return web.json_response({"error": "Failed to download image"}, status=500)
 
-                    # Update the payload with the new image path (GUID)
+                    # Update the payload with the new image path
                     prompt['30']['inputs']['image'] = image_filename
 
                 # Process the prompt
