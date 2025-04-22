@@ -890,19 +890,24 @@ class PromptServer():
                     first_image_filename = str(uuid.uuid4()) + os.path.splitext(first_image['url'])[1]
                     first_image_path = os.path.join(input_dir, first_image_filename)
 
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(first_image['url']) as resp:
-                                if resp.status == 200:
-                                    with open(first_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"First image successfully downloaded and saved to {first_image_path}")
-                                else:
-                                    logging.error(f"Failed to download first image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download first image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download first image from URL: {str(e)}")
-                        return web.json_response({"error": "Failed to download first image"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(first_image['url']) as resp:
+                                    if resp.status == 200:
+                                        with open(first_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"First image successfully downloaded and saved to {first_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download first image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download first image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download first image from URL: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download first image"}, status=500)
 
                     # Update the payload with the first image path
                     prompt['30']['inputs']['image'] = first_image_filename
@@ -912,19 +917,24 @@ class PromptServer():
                     second_image_filename = str(uuid.uuid4()) + os.path.splitext(second_image['url'])[1]
                     second_image_path = os.path.join(input_dir, second_image_filename)
 
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(second_image['url']) as resp:
-                                if resp.status == 200:
-                                    with open(second_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Second image successfully downloaded and saved to {second_image_path}")
-                                else:
-                                    logging.error(f"Failed to download second image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download second image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download second image from URL: {str(e)}")
-                        return web.json_response({"error": "Failed to download second image"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(second_image['url']) as resp:
+                                    if resp.status == 200:
+                                        with open(second_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Second image successfully downloaded and saved to {second_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download second image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download second image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download second image from URL: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download second image"}, status=500)
 
                     # Update the payload with the second image path
                     prompt['31']['inputs']['image'] = second_image_filename
@@ -940,19 +950,24 @@ class PromptServer():
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from URL: {str(e)}")
-                        return web.json_response({"error": "Failed to download image"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from URL: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image"}, status=500)
 
                     # Update the payload with the new image path
                     prompt['30']['inputs']['image'] = image_filename
@@ -1176,20 +1191,24 @@ class PromptServer():
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
 
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
@@ -1202,20 +1221,24 @@ class PromptServer():
                     base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_base_image_path = os.path.join(base_image_dir, base_image_filename)
 
-                    # Download the base image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(base_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_base_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
-                                else:
-                                    logging.error(f"Failed to download base image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download base image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download base image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download base image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(base_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_base_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download base image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download base image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download base image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download base image from S3"}, status=500)
 
                     # Update the prompt to include the base image in section '35'
                     if '35' in prompt:
@@ -1436,19 +1459,25 @@ class PromptServer():
                     image_filename = str(uuid.uuid4()) + os.path.splitext(airi_path)[1]
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
                     prompt['30']['inputs']['image'] = image_filename
 
                 # Extract and handle the base_image parameter (similar to airi_path)
@@ -1459,20 +1488,24 @@ class PromptServer():
                     base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_base_image_path = os.path.join(base_image_dir, base_image_filename)
 
-                    # Download the base image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(base_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_base_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
-                                else:
-                                    logging.error(f"Failed to download base image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download base image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download base image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download base image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(base_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_base_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download base image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download base image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download base image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download base image from S3"}, status=500)
 
                     # Update the prompt to include the base image in section '35'
                     if '35' in prompt:
@@ -1700,20 +1733,24 @@ class PromptServer():
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
 
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
@@ -1726,20 +1763,24 @@ class PromptServer():
                     base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_base_image_path = os.path.join(base_image_dir, base_image_filename)
 
-                    # Download the base image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(base_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_base_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
-                                else:
-                                    logging.error(f"Failed to download base image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download base image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download base image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download base image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(base_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_base_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download base image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download base image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download base image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download base image from S3"}, status=500)
 
                     # Update the prompt to include the base image in section '35'
                     if '35' in prompt:
@@ -1964,20 +2005,24 @@ class PromptServer():
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
 
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
@@ -1989,20 +2034,24 @@ class PromptServer():
                     base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_base_image_path = os.path.join(base_image_dir, base_image_filename)
 
-                    # Download the base image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(base_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_base_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
-                                else:
-                                    logging.error(f"Failed to download base image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download base image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download base image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download base image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(base_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_base_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download base image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download base image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download base image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download base image from S3"}, status=500)
 
                     # Update the prompt to include the base image in section '35'
                     if '35' in prompt:
@@ -2017,20 +2066,24 @@ class PromptServer():
                     mask_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_mask_image_path = os.path.join(mask_image_dir, mask_image_filename)
 
-                    # Download the mask image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(mask_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_mask_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Mask image successfully downloaded and saved to {local_mask_image_path}")
-                                else:
-                                    logging.error(f"Failed to download mask image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download mask image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download mask image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download mask image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(mask_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_mask_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Mask image successfully downloaded and saved to {local_mask_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download mask image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download mask image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download mask image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download mask image from S3"}, status=500)
 
                     # Update the prompt to include the mask image in section '101'
                     if '101' in prompt:
@@ -2246,24 +2299,28 @@ class PromptServer():
                     airi_path = None  # Explicitly set to None for clarity
                 else:
                     # Generate a GUID for the image filename
-                    image_filename = str(uuid.uuid4()) + os.path.splitext(airi_path)[1]
+                    image_filename = str.uuid.uuid4() + os.path.splitext(airi_path)[1]
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
 
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
@@ -2275,20 +2332,24 @@ class PromptServer():
                     base_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_base_image_path = os.path.join(base_image_dir, base_image_filename)
 
-                    # Download the base image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(base_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_base_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
-                                else:
-                                    logging.error(f"Failed to download base image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download base image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download base image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download base image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(base_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_base_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Base image successfully downloaded and saved to {local_base_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download base image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download base image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download base image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download base image from S3"}, status=500)
 
                     # Update the prompt to include the base image in section '35'
                     if '35' in prompt:
@@ -2303,20 +2364,24 @@ class PromptServer():
                     mask_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_mask_image_path = os.path.join(mask_image_dir, mask_image_filename)
 
-                    # Download the mask image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(mask_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_mask_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Mask image successfully downloaded and saved to {local_mask_image_path}")
-                                else:
-                                    logging.error(f"Failed to download mask image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download mask image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download mask image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download mask image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(mask_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_mask_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Mask image successfully downloaded and saved to {local_mask_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download mask image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download mask image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download mask image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download mask image from S3"}, status=500)
 
                     # Update the prompt to include the mask image in section '101'
                     if '101' in prompt:
@@ -2331,20 +2396,24 @@ class PromptServer():
                     cn_image_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_cn_image_path = os.path.join(cn_image_dir, cn_image_filename)
 
-                    # Download the cn image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(cn_image) as resp:
-                                if resp.status == 200:
-                                    with open(local_cn_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"CN image successfully downloaded and saved to {local_cn_image_path}")
-                                else:
-                                    logging.error(f"Failed to download CN image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download CN image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download CN image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download CN image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(cn_image) as resp:
+                                    if resp.status == 200:
+                                        with open(local_cn_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"CN image successfully downloaded and saved to {local_cn_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download CN image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download CN image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download CN image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download CN image from S3"}, status=500)
 
                     # Update the prompt to include the CN image in section '100'
                     if '100' in prompt:
@@ -2563,20 +2632,24 @@ class PromptServer():
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
 
                     # Update the payload with the new image path (GUID)
                     prompt['35']['inputs']['image'] = image_filename
@@ -2786,20 +2859,24 @@ class PromptServer():
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_image_path = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(airi_path) as resp:
-                                if resp.status == 200:
-                                    with open(local_image_path, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_image_path}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(airi_path) as resp:
+                                    if resp.status == 200:
+                                        with open(local_image_path, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_image_path}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
 
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
@@ -2816,20 +2893,24 @@ class PromptServer():
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_add_on = os.path.join(input_dir, image_filename)
 
-                    # Download the image from the S3 path and save it to the input directory
-                    try:
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(add_on) as resp:
-                                if resp.status == 200:
-                                    with open(local_add_on, 'wb') as f:
-                                        f.write(await resp.read())
-                                    logging.info(f"Image successfully downloaded and saved to {local_add_on}")
-                                else:
-                                    logging.error(f"Failed to download image, status code: {resp.status}")
-                                    return web.json_response({"error": "Failed to download image"}, status=500)
-                    except Exception as e:
-                        logging.error(f"Failed to download image from S3: {str(e)}")
-                        return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            async with aiohttp.ClientSession() as session:
+                                async with session.get(add_on) as resp:
+                                    if resp.status == 200:
+                                        with open(local_add_on, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Image successfully downloaded and saved to {local_add_on}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download image"}, status=500)
+                        except Exception as e:
+                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
+                            if attempt == max_retries - 1:
+                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
 
                     # Update the payload with the new image path (GUID)
                     prompt['100']['inputs']['image'] = image_filename
