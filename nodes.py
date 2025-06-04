@@ -1585,6 +1585,14 @@ class SaveImage:
         for (batch_number, image) in enumerate(images):
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            
+            # Convert RGBA to RGB for JPEG format
+            if img.mode == 'RGBA':
+                # Create a white background
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
+                img = background
+            
             metadata = None
             if not args.disable_metadata:
                 metadata = PngInfo()
@@ -1596,7 +1604,9 @@ class SaveImage:
 
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
             file = f"{filename_with_batch_num}_{counter:05}_.jpg"
-            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level, quality=quality)
+            
+            # Save as JPEG (metadata and compress_level don't apply to JPEG)
+            img.save(os.path.join(full_output_folder, file), quality=quality)
             results.append({
                 "filename": file,
                 "subfolder": subfolder,
