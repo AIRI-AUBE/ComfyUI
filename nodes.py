@@ -1549,6 +1549,7 @@ class KSamplerAdvanced:
             disable_noise = True
         return common_ksampler(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, denoise=denoise, disable_noise=disable_noise, start_step=start_at_step, last_step=end_at_step, force_full_denoise=force_full_denoise)
 
+
 class SaveImage:
     def __init__(self):
         self.output_dir = folder_paths.get_output_directory()
@@ -1576,13 +1577,22 @@ class SaveImage:
     CATEGORY = "image"
     DESCRIPTION = "Saves the input images to your ComfyUI output directory."
 
-    def save_images(self, images, filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None):
-        filename_prefix += self.prefix_append
+    def save_images(self, images, filename_prefix="AIRI", prompt=None, extra_pnginfo=None, quality=80):
+        random_number = random.randint(100000, 999999)  
+        filename_prefix += self.prefix_append + "_" + str(random_number)
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, images[0].shape[1], images[0].shape[0])
         results = list()
         for (batch_number, image) in enumerate(images):
             i = 255. * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            
+            # Convert RGBA to RGB for JPEG format
+            if img.mode == 'RGBA':
+                # Create a white background
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
+                img = background
+            
             metadata = None
             if not args.disable_metadata:
                 metadata = PngInfo()
@@ -1593,8 +1603,10 @@ class SaveImage:
                         metadata.add_text(x, json.dumps(extra_pnginfo[x]))
 
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
-            file = f"{filename_with_batch_num}_{counter:05}_.png"
-            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level)
+            file = f"{filename_with_batch_num}_{counter:05}_.jpg"
+            
+            # Save as JPEG (metadata and compress_level don't apply to JPEG)
+            img.save(os.path.join(full_output_folder, file), quality=quality)
             results.append({
                 "filename": file,
                 "subfolder": subfolder,
