@@ -1055,7 +1055,9 @@ class StyleModelApply:
                 # torch.log returns -inf, which is what we want
                 attn_bias = torch.log(torch.Tensor([strength if strength_type == "attn_bias" else 1.0]))
                 # get the size of the mask image
-                mask_ref_size = keys.get("attention_mask_img_shape", (1, 1))
+                mask_ref_size = keys.get("attention_mask_
+                                         
+                                         _shape", (1, 1))
                 n_ref = mask_ref_size[0] * mask_ref_size[1]
                 n_txt = txt.shape[1]
                 # grab the existing mask
@@ -1604,9 +1606,7 @@ class SaveImage:
 
             filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
             file = f"{filename_with_batch_num}_{counter:05}_.jpg"
-            
-            # Save as JPEG (metadata and compress_level don't apply to JPEG)
-            img.save(os.path.join(full_output_folder, file), quality=quality)
+            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level, quality=quality)
             results.append({
                 "filename": file,
                 "subfolder": subfolder,

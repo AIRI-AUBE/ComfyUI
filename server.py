@@ -40,21 +40,6 @@ import boto3
 
 from botocore.exceptions import NoCredentialsError, ClientError
 
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '7860')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '7860')
-AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME', '7860')
-AWS_REGION = os.getenv('AWS_REGION', '7860')
-
-AWS_ACCESS_KEY_ID_SG = os.getenv('AWS_ACCESS_KEY_ID_SG', '7860')
-AWS_SECRET_ACCESS_KEY_SG = os.getenv('AWS_SECRET_ACCESS_KEY_SG', '7860')
-AWS_BUCKET_NAME_SG = os.getenv('AWS_BUCKET_NAME_SG', '7860')
-AWS_REGION_SG = os.getenv('AWS_REGION_SG', '7860')
-
-AWS_ACCESS_KEY_ID_EU = os.getenv('AWS_ACCESS_KEY_ID_EU', '7860')
-AWS_SECRET_ACCESS_KEY_EU = os.getenv('AWS_SECRET_ACCESS_KEY_EU', '7860')
-AWS_BUCKET_NAME_EU = os.getenv('AWS_BUCKET_NAME_EU', '7860')
-AWS_REGION_EU = os.getenv('AWS_REGION_EU', '7860')
-
 class BinaryEventTypes:
     PREVIEW_IMAGE = 1
     UNENCODED_PREVIEW_IMAGE = 2
@@ -819,26 +804,11 @@ class PromptServer():
                             path = os.path.join(output_dir, image_filename)
 
                             region = json_data.get("region", "default")
-
-                            if region == "SG":
-                                aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                aws_region = AWS_REGION_SG
-                                aws_bucket_name = AWS_BUCKET_NAME_SG
-                                s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                            elif region == "EU":
-                                aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                aws_region = AWS_REGION_EU
-                                aws_bucket_name = AWS_BUCKET_NAME_EU
-                                s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                            else:
-                                aws_access_key_id = AWS_ACCESS_KEY_ID
-                                aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                aws_region = AWS_REGION
-                                aws_bucket_name = AWS_BUCKET_NAME
-                                s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
-
+                            aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                            aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                            aws_region = json_data.get("aws_region", "default")
+                            aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                            s3_url_base = json_data.get("s3_url_base", "default")
 
                             # Initialize the S3 client
                             s3_client = boto3.client(
@@ -1100,24 +1070,11 @@ class PromptServer():
                                     print("starting s3");
                                     # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
                                     
                                     print(f"AWS Access Key ID: {aws_access_key_id}")
                                     print(f"AWS Secret Access Key: {aws_secret_access_key}")
@@ -1374,24 +1331,11 @@ class PromptServer():
 
                                      # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -1499,6 +1443,7 @@ class PromptServer():
                             logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
                             if attempt == max_retries - 1:
                                 return web.json_response({"error": "Failed to download image from S3"}, status=500)
+
                     prompt['30']['inputs']['image'] = image_filename
 
                 # Extract and handle the base_image parameter (similar to airi_path)
@@ -1646,24 +1591,11 @@ class PromptServer():
 
                                      # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -1916,24 +1848,11 @@ class PromptServer():
 
                                      # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -2216,24 +2135,11 @@ class PromptServer():
 
                                      # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -2546,24 +2452,11 @@ class PromptServer():
 
                                      # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -2781,24 +2674,11 @@ class PromptServer():
 
                                      # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
@@ -3042,24 +2922,11 @@ class PromptServer():
 
                                      # Region-based AWS configuration using pre-declared variables
                                     region = json_data.get("region", "default")
-                                    if region == "SG":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_SG
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_SG
-                                        aws_region = AWS_REGION_SG
-                                        aws_bucket_name = AWS_BUCKET_NAME_SG
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_SG}.s3.{AWS_REGION_SG}.amazonaws.com"
-                                    elif region == "EU":
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID_EU
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY_EU
-                                        aws_region = AWS_REGION_EU
-                                        aws_bucket_name = AWS_BUCKET_NAME_EU
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME_EU}.s3.{AWS_REGION_EU}.amazonaws.com"
-                                    else:
-                                        aws_access_key_id = AWS_ACCESS_KEY_ID
-                                        aws_secret_access_key = AWS_SECRET_ACCESS_KEY
-                                        aws_region = AWS_REGION
-                                        aws_bucket_name = AWS_BUCKET_NAME
-                                        s3_url_base = f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com.cn"
+                                    aws_access_key_id = json_data.get("aws_access_key_id", "default")
+                                    aws_secret_access_key = json_data.get("aws_secret_access_key", "default")
+                                    aws_region = json_data.get("aws_region", "default")
+                                    aws_bucket_name = json_data.get("aws_bucket_name", "default")
+                                    s3_url_base = json_data.get("s3_url_base", "default")
 
                                     # Initialize S3 client
                                     s3_client = boto3.client(
