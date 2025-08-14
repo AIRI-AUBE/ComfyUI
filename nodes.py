@@ -1055,9 +1055,7 @@ class StyleModelApply:
                 # torch.log returns -inf, which is what we want
                 attn_bias = torch.log(torch.Tensor([strength if strength_type == "attn_bias" else 1.0]))
                 # get the size of the mask image
-                mask_ref_size = keys.get("attention_mask_
-                                         
-                                         _shape", (1, 1))
+                mask_ref_size = keys.get("attention_mask_img_shape", (1, 1))
                 n_ref = mask_ref_size[0] * mask_ref_size[1]
                 n_txt = txt.shape[1]
                 # grab the existing mask
