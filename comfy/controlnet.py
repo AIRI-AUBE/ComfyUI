@@ -120,7 +120,7 @@ class ControlBase:
         if self.previous_controlnet is not None:
             out += self.previous_controlnet.get_models()
         return out
-    
+
     def get_extra_hooks(self):
         out = []
         if self.extra_hooks is not None:
@@ -390,8 +390,9 @@ class ControlLora(ControlNet):
                 pass
 
         for k in self.control_weights:
-            if k not in {"lora_controlnet"}:
-                comfy.utils.set_attr_param(self.control_model, k, self.control_weights[k].to(dtype).to(comfy.model_management.get_torch_device()))
+            if (k not in {"lora_controlnet"}):
+                if (k.endswith(".up") or k.endswith(".down") or k.endswith(".weight") or k.endswith(".bias")) and ("__" not in k):
+                    comfy.utils.set_attr_param(self.control_model, k, self.control_weights[k].to(dtype).to(comfy.model_management.get_torch_device()))
 
     def copy(self):
         c = ControlLora(self.control_weights, global_average_pooling=self.global_average_pooling)
@@ -418,10 +419,7 @@ def controlnet_config(sd, model_options={}):
         weight_dtype = comfy.utils.weight_dtype(sd)
 
         supported_inference_dtypes = list(model_config.supported_inference_dtypes)
-        if weight_dtype is not None:
-            supported_inference_dtypes.append(weight_dtype)
-
-        unet_dtype = comfy.model_management.unet_dtype(model_params=-1, supported_dtypes=supported_inference_dtypes)
+        unet_dtype = comfy.model_management.unet_dtype(model_params=-1, supported_dtypes=supported_inference_dtypes, weight_dtype=weight_dtype)
 
     load_device = comfy.model_management.get_torch_device()
     manual_cast_dtype = comfy.model_management.unet_manual_cast(unet_dtype, load_device)
@@ -689,10 +687,7 @@ def load_controlnet_state_dict(state_dict, model=None, model_options={}):
         if supported_inference_dtypes is None:
             supported_inference_dtypes = [comfy.model_management.unet_dtype()]
 
-        if weight_dtype is not None:
-            supported_inference_dtypes.append(weight_dtype)
-
-        unet_dtype = comfy.model_management.unet_dtype(model_params=-1, supported_dtypes=supported_inference_dtypes)
+        unet_dtype = comfy.model_management.unet_dtype(model_params=-1, supported_dtypes=supported_inference_dtypes, weight_dtype=weight_dtype)
 
     load_device = comfy.model_management.get_torch_device()
 
@@ -742,6 +737,7 @@ def load_controlnet_state_dict(state_dict, model=None, model_options={}):
     return control
 
 def load_controlnet(ckpt_path, model=None, model_options={}):
+    model_options = model_options.copy()
     if "global_average_pooling" not in model_options:
         filename = os.path.splitext(ckpt_path)[0]
         if filename.endswith("_shuffle") or filename.endswith("_shuffle_fp16"): #TODO: smarter way of enabling global_average_pooling
