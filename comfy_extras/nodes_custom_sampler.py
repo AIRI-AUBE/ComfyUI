@@ -1,6 +1,8 @@
+import math
 import comfy.samplers
 import comfy.sample
 from comfy.k_diffusion import sampling as k_diffusion_sampling
+from comfy.comfy_types import IO, ComfyNodeABC, InputTypeDict
 import latent_preview
 import torch
 import comfy.utils
@@ -231,6 +233,73 @@ class FlipSigmas:
             sigmas[0] = 0.0001
         return (sigmas,)
 
+class SetFirstSigma:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":
+                    {"sigmas": ("SIGMAS", ),
+                     "sigma": ("FLOAT", {"default": 136.0, "min": 0.0, "max": 20000.0, "step": 0.001, "round": False}),
+                    }
+               }
+    RETURN_TYPES = ("SIGMAS",)
+    CATEGORY = "sampling/custom_sampling/sigmas"
+
+    FUNCTION = "set_first_sigma"
+
+    def set_first_sigma(self, sigmas, sigma):
+        sigmas = sigmas.clone()
+        sigmas[0] = sigma
+        return (sigmas, )
+
+class ExtendIntermediateSigmas:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required":
+                    {"sigmas": ("SIGMAS", ),
+                     "steps": ("INT", {"default": 2, "min": 1, "max": 100}),
+                     "start_at_sigma": ("FLOAT", {"default": -1.0, "min": -1.0, "max": 20000.0, "step": 0.01, "round": False}),
+                     "end_at_sigma": ("FLOAT", {"default": 12.0, "min":  0.0, "max": 20000.0, "step": 0.01, "round": False}),
+                     "spacing": (['linear', 'cosine', 'sine'],),
+                    }
+               }
+    RETURN_TYPES = ("SIGMAS",)
+    CATEGORY = "sampling/custom_sampling/sigmas"
+
+    FUNCTION = "extend"
+
+    def extend(self, sigmas: torch.Tensor, steps: int, start_at_sigma: float, end_at_sigma: float, spacing: str):
+        if start_at_sigma < 0:
+            start_at_sigma = float("inf")
+
+        interpolator = {
+            'linear': lambda x: x,
+            'cosine': lambda x: torch.sin(x*math.pi/2),
+            'sine':   lambda x: 1 - torch.cos(x*math.pi/2)
+        }[spacing]
+
+        # linear space for our interpolation function
+        x = torch.linspace(0, 1, steps + 1, device=sigmas.device)[1:-1]
+        computed_spacing = interpolator(x)
+
+        extended_sigmas = []
+        for i in range(len(sigmas) - 1):
+            sigma_current = sigmas[i]
+            sigma_next = sigmas[i+1]
+
+            extended_sigmas.append(sigma_current)
+
+            if end_at_sigma <= sigma_current <= start_at_sigma:
+                interpolated_steps = computed_spacing * (sigma_next - sigma_current) + sigma_current
+                extended_sigmas.extend(interpolated_steps.tolist())
+
+        # Add the last sigma value
+        if len(sigmas) > 0:
+            extended_sigmas.append(sigmas[-1])
+
+        extended_sigmas = torch.FloatTensor(extended_sigmas)
+
+        return (extended_sigmas,)
+
 class KSamplerSelect:
     @classmethod
     def INPUT_TYPES(s):
@@ -412,6 +481,46 @@ class SamplerDPMAdaptative:
                                                               "s_noise":s_noise })
         return (sampler, )
 
+
+class SamplerER_SDE(ComfyNodeABC):
+    @classmethod
+    def INPUT_TYPES(cls) -> InputTypeDict:
+        return {
+            "required": {
+                "solver_type": (IO.COMBO, {"options": ["ER-SDE", "Reverse-time SDE", "ODE"]}),
+                "max_stage": (IO.INT, {"default": 3, "min": 1, "max": 3}),
+                "eta": (
+                    IO.FLOAT,
+                    {"default": 1.0, "min": 0.0, "max": 100.0, "step": 0.01, "round": False, "tooltip": "Stochastic strength of reverse-time SDE.\nWhen eta=0, it reduces to deterministic ODE. This setting doesn't apply to ER-SDE solver type."},
+                ),
+                "s_noise": (IO.FLOAT, {"default": 1.0, "min": 0.0, "max": 100.0, "step": 0.01, "round": False}),
+            }
+        }
+
+    RETURN_TYPES = (IO.SAMPLER,)
+    CATEGORY = "sampling/custom_sampling/samplers"
+
+    FUNCTION = "get_sampler"
+
+    def get_sampler(self, solver_type, max_stage, eta, s_noise):
+        if solver_type == "ODE" or (solver_type == "Reverse-time SDE" and eta == 0):
+            eta = 0
+            s_noise = 0
+
+        def reverse_time_sde_noise_scaler(x):
+            return x ** (eta + 1)
+
+        if solver_type == "ER-SDE":
+            # Use the default one in sample_er_sde()
+            noise_scaler = None
+        else:
+            noise_scaler = reverse_time_sde_noise_scaler
+
+        sampler_name = "er_sde"
+        sampler = comfy.samplers.ksampler(sampler_name, {"s_noise": s_noise, "noise_scaler": noise_scaler, "max_stage": max_stage})
+        return (sampler,)
+
+
 class Noise_EmptyNoise:
     def __init__(self):
         self.seed = 0
@@ -436,7 +545,7 @@ class SamplerCustom:
         return {"required":
                     {"model": ("MODEL",),
                     "add_noise": ("BOOLEAN", {"default": True}),
-                    "noise_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                    "noise_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "control_after_generate": True}),
                     "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step":0.1, "round": 0.01}),
                     "positive": ("CONDITIONING", ),
                     "negative": ("CONDITIONING", ),
@@ -541,8 +650,14 @@ class Guider_DualCFG(comfy.samplers.CFGGuider):
     def predict_noise(self, x, timestep, model_options={}, seed=None):
         negative_cond = self.conds.get("negative", None)
         middle_cond = self.conds.get("middle", None)
+        positive_cond = self.conds.get("positive", None)
+        if model_options.get("disable_cfg1_optimization", False) == False:
+            if math.isclose(self.cfg2, 1.0):
+                negative_cond = None
+                if math.isclose(self.cfg1, 1.0):
+                    middle_cond = None
 
-        out = comfy.samplers.calc_cond_batch(self.inner_model, [negative_cond, middle_cond, self.conds.get("positive", None)], x, timestep, model_options)
+        out = comfy.samplers.calc_cond_batch(self.inner_model, [negative_cond, middle_cond, positive_cond], x, timestep, model_options)
         return comfy.samplers.cfg_function(self.inner_model, out[1], out[0], self.cfg2, x, timestep, model_options=model_options, cond=middle_cond, uncond=negative_cond) + (out[2] - out[1]) * self.cfg1
 
 class DualCFGGuider:
@@ -587,10 +702,16 @@ class DisableNoise:
 class RandomNoise(DisableNoise):
     @classmethod
     def INPUT_TYPES(s):
-        return {"required":{
-                    "noise_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                     }
-                }
+        return {
+            "required": {
+                "noise_seed": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "control_after_generate": True,
+                }),
+            }
+        }
 
     def get_noise(self, noise_seed):
         return (Noise_RandomNoise(noise_seed),)
@@ -707,9 +828,12 @@ NODE_CLASS_MAPPINGS = {
     "SamplerDPMPP_SDE": SamplerDPMPP_SDE,
     "SamplerDPMPP_2S_Ancestral": SamplerDPMPP_2S_Ancestral,
     "SamplerDPMAdaptative": SamplerDPMAdaptative,
+    "SamplerER_SDE": SamplerER_SDE,
     "SplitSigmas": SplitSigmas,
     "SplitSigmasDenoise": SplitSigmasDenoise,
     "FlipSigmas": FlipSigmas,
+    "SetFirstSigma": SetFirstSigma,
+    "ExtendIntermediateSigmas": ExtendIntermediateSigmas,
 
     "CFGGuider": CFGGuider,
     "DualCFGGuider": DualCFGGuider,
