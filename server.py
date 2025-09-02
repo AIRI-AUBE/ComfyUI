@@ -2761,9 +2761,11 @@ class PromptServer():
                     local_image_path = os.path.join(input_dir, image_filename)
 
                     max_retries = 3
-                    for attempt in range(max_retries):
-                        try:
-                            async with aiohttp.ClientSession() as session:
+                    session_timeout = aiohttp.ClientTimeout(total=30, connect=10)
+                    
+                    async with aiohttp.ClientSession(timeout=session_timeout) as session:
+                        for attempt in range(max_retries):
+                            try:
                                 async with session.get(airi_path) as resp:
                                     if resp.status == 200:
                                         with open(local_image_path, 'wb') as f:
@@ -2774,10 +2776,22 @@ class PromptServer():
                                         logging.error(f"Failed to download image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
                                         if attempt == max_retries - 1:
                                             return web.json_response({"error": "Failed to download image"}, status=500)
-                        except Exception as e:
-                            logging.error(f"Failed to download image from S3: {str(e)}, attempt {attempt+1}/{max_retries}")
-                            if attempt == max_retries - 1:
-                                return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                                        await asyncio.sleep(1)  # Brief delay between retries
+                            except asyncio.TimeoutError:
+                                logging.error(f"Timeout downloading image from {airi_path}, attempt {attempt+1}/{max_retries}")
+                                if attempt == max_retries - 1:
+                                    return web.json_response({"error": "Timeout downloading image"}, status=500)
+                                await asyncio.sleep(1)
+                            except (aiohttp.ClientError, aiohttp.ClientConnectorError) as e:
+                                logging.error(f"Client error downloading image: {str(e)}, attempt {attempt+1}/{max_retries}")
+                                if attempt == max_retries - 1:
+                                    return web.json_response({"error": "Failed to download image"}, status=500)
+                                await asyncio.sleep(1)
+                            except Exception as e:
+                                logging.error(f"Unexpected error downloading image: {str(e)}, attempt {attempt+1}/{max_retries}")
+                                if attempt == max_retries - 1:
+                                    return web.json_response({"error": "Failed to download image from S3"}, status=500)
+                                await asyncio.sleep(1)
 
                     # Update the payload with the new image path (GUID)
                     prompt['30']['inputs']['image'] = image_filename
@@ -2790,6 +2804,46 @@ class PromptServer():
                         prompt['100']['inputs']['image'] = "image.png"
                     add_on = None  # Explicitly set to None for clarity
                 else:
+                    add_on_filename = str(uuid.uuid4()) + os.path.splitext(add_on)[1]
+                    input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
+                    local_add_on = os.path.join(input_dir, add_on_filename)
+
+                    max_retries = 3
+                    session_timeout = aiohttp.ClientTimeout(total=30, connect=10)
+                    
+                    async with aiohttp.ClientSession(timeout=session_timeout) as session:
+                        for attempt in range(max_retries):
+                            try:
+                                async with session.get(add_on) as resp:
+                                    if resp.status == 200:
+                                        with open(local_add_on, 'wb') as f:
+                                            f.write(await resp.read())
+                                        logging.info(f"Add-on image successfully downloaded and saved to {local_add_on}")
+                                        break
+                                    else:
+                                        logging.error(f"Failed to download add-on image, status code: {resp.status}, attempt {attempt+1}/{max_retries}")
+                                        if attempt == max_retries - 1:
+                                            return web.json_response({"error": "Failed to download add-on image"}, status=500)
+                                        await asyncio.sleep(1)
+                            except asyncio.TimeoutError:
+                                logging.error(f"Timeout downloading add-on image from {add_on}, attempt {attempt+1}/{max_retries}")
+                                if attempt == max_retries - 1:
+                                    return web.json_response({"error": "Timeout downloading add-on image"}, status=500)
+                                await asyncio.sleep(1)
+                            except (aiohttp.ClientError, aiohttp.ClientConnectorError) as e:
+                                logging.error(f"Client error downloading add-on image: {str(e)}, attempt {attempt+1}/{max_retries}")
+                                if attempt == max_retries - 1:
+                                    return web.json_response({"error": "Failed to download add-on image"}, status=500)
+                                await asyncio.sleep(1)
+                            except Exception as e:
+                                logging.error(f"Unexpected error downloading add-on image: {str(e)}, attempt {attempt+1}/{max_retries}")
+                                if attempt == max_retries - 1:
+                                    return web.json_response({"error": "Failed to download add-on image from S3"}, status=500)
+                                await asyncio.sleep(1)
+
+                    # Update the payload with the new image path (GUID)
+                    prompt['100']['inputs']['image'] = add_on_filename
+                    
                     image_filename = str(uuid.uuid4()) + os.path.splitext(add_on)[1]
                     input_dir = os.path.abspath(os.path.join(os.getcwd(), 'input'))
                     local_add_on = os.path.join(input_dir, image_filename)
